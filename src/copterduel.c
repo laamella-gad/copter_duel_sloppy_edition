@@ -47,12 +47,9 @@ __export const char charset_data[] = {
 #define WHT     "\x05"
 #define RED     "\x1c"
 #define GRN     "\x1e"
-#define BLK     "\x90"
-#define BRN     "\x95"
 #define LBLU    "\x9a"
 #define GRY3    "\x9b"
 #define YEL     "\x9e"
-#define SH      "\xc0"
 
 #define DOWN4   DOWN DOWN DOWN DOWN
 #define RGHT4   RGHT RGHT RGHT RGHT
@@ -84,43 +81,27 @@ static bool no_key_or_button(void)
 	return PEEK(KEY_PRESSED) == 64 && cia1.pra == 127 && cia1.prb == 255;
 }
 
-// 1079-1109: the playfield and the status panels, yellow top, red bottom
-static const char * const playfield[25] = {
-	GRY3 p"DEABC" SH SH p"DEGABBGABGAEABBGEGABEAC" SH YEL p"\\(((((((]",
-	GRY3 p"P   LBCQ                     LC" YEL p"*=" BLK p"00000=" YEL p"+",
-	GRY3 p"R     LF                      J" YEL p"*=======+",
-	GRY3 p"P                NM          NK" YEL p"*" BLK p"energy=" YEL p"+",
-	GRY3 p"R             NWXKQ          LC" YEL p"*" BRN p"#######" YEL p"+",
-	GRY3 p"P       NSWTUXK" SH SH SH p"Q     NSM   H" YEL p"*=======+",
-	GRY3 p"Q       LBEGAEGABGF     LCP   I" YEL p"*" BLK p"rockets" YEL p"+",
-	GRY3 p"R                        LF   J" YEL p"*" BRN p"#######" YEL p"+",
-	GRY3 p"P                             H" YEL p"*=======+",
-	GRY3 p"OM      NSWM       NM        NK" YEL p"*" BLK p"copters" YEL p"+",
-	GRY3 SH p"OWSWXTVK" SH SH p"OM      LF        LC" YEL p"*=[=[=[=+",
-	GRY3 p"DAEGBEAC" SH SH SH p"DF                 H" YEL p"^)))))))_",
-	GRY3 p"Q      LABCP            NM    J" SH SH SH SH SH SH SH SH SH,
-	GRY3 p"R         LF            LF    H" RED p"\\(((((((]",
-	GRY3 p"P   NM                        I" RED p"*=" BLK p"00000=" RED p"+",
-	GRY3 p"Q   LF               NWXM     H" RED p"*=======+",
-	GRY3 p"P                    I" SH SH p"OWTUXSK" RED p"*" BLK p"energy=" RED p"+",
-	GRY3 p"R       NSWSWXTUM    LGC" SH SH SH SH SH SH SH RED p"*" BRN p"#######" RED p"+",
-	GRY3 p"P       LABEGBGCP      LAEABEGC" RED p"*=======+",
-	GRY3 p"Q              IOM            H" RED p"*" BLK p"rockets" RED p"+",
-	GRY3 p"OM             LAF            J" RED p"*" BRN p"#######" RED p"+",
-	GRY3 SH p"R     NM                     H" RED p"*=======+",
-	GRY3 p"DF     HQ       NWM    JQ     I" RED p"*" BLK p"copters" RED p"+",
-	GRY3 p"Q      HOSSWXTVSK" SH p"OSSM IP     H" RED p"*=[=[=[=+",
-	GRY3 p"OSYYYXXK" SH SH SH SH SH SH SH SH SH SH SH SH SH p"OSKOSYYYXK" RED p"^)))))))",
+// 1079-1109: the playfield and the status panels, yellow top, red bottom:
+// 1000 screen codes, then 1000 colours
+static const char playfield[2000] = {
+	#embed "playfield.bin"
 };
+
+// KERNAL screen line link table: bit 7 set where a logical line starts
+#define LINE_LINKS  ((volatile char *)0xd9)
 
 static void draw_screen(void)
 {
 	vic.ctrl1 = 0;
 	print(CLR);
-	for (char i = 0; i < 25; i++)
-		print(playfield[i]);
-	POKE(17383, 31);
-	POKE(56295, 2);
+	for (unsigned i = 0; i < 1000; i++)
+	{
+		screen[i] = playfield[i];
+		colour_ram[i] = playfield[1000 + i];
+	}
+	// Printed, the 40 character rows joined into 80 character logical lines
+	for (char i = 1; i < 24; i += 2)
+		LINE_LINKS[i] &= 0x7f;
 	vic.ctrl1 = 27;
 }
 

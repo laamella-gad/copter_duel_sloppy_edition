@@ -15,6 +15,7 @@ annotations `copterduel.flo`, the BASIC listing, and the byte-patch build) is in
 | `src/window.c` | The original's window routines at $8800/$8803 (`sysws`/`syswc`) |
 | `src/sprites.bin` | Sprite blocks $10-$32, placed at $4400 |
 | `src/charset.bin` | The character set, placed at $7800 |
+| `src/playfield.bin` | The playfield: 1000 screen codes, then 1000 colours |
 | `tools/test_end.py` | VICE test of the end-of-round message |
 
 ## Memory map
@@ -53,7 +54,9 @@ annotations `copterduel.flo`, the BASIC listing, and the byte-patch build) is in
 ## Text output
 
 `copterduel.c` prints through the KERNAL (`$ffd2`) with the original PETSCII strings (`p"..."` literals plus control
-code macros), so the screen editor draws the same screens. Windows save what they cover into arrays (the original
+code macros), so the screen editor draws the same screens. The playfield is the exception: the original printed it, the C version
+copies `playfield.bin` to the screen and colour RAM and then joins the rows into 80 character logical lines in the
+screen line link table (`$d9`), as printing them did, because the end windows' `CR`s depend on it. Windows save what they cover into arrays (the original
 used the RAM under the BASIC ROM).
 
 ## Fixed bugs
