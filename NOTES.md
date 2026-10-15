@@ -12,6 +12,8 @@ Disassembled with [Deflower](../deflower): `../deflower/deflower --verify copter
 | `intro.vsf` | VICE snapshot at the crack intro's entry point $0810 |
 | `copterduel.flo` | Deflower annotations for `copterduel.vsf` |
 | `copterduel_basic.txt` | The game's BASIC program, listed with `petcat -2` |
+| `tools/build.py` | Builds `build/copterduel.prg` from the snapshot, with the fixes: `LOAD`, `RUN` |
+| `tools/test_end.py` | VICE test of the end-of-round message |
 | `tools/snapshot.py` | Remakes `copterduel.vsf`: `tools/snapshot.py copterduel.prg copterduel.vsf` |
 
 ## The game
@@ -71,11 +73,14 @@ Everything is labelled in `copterduel.flo`. In short:
 - `window_open`/`window_close` ($8800/$8803) are the BASIC's `sysws`/`syswc`: framed windows with a stack of 6,
   saving the covered screen into the RAM under the BASIC ROM ($a000 characters, $b800 colours).
 
-## Known bugs
+## Fixed bugs
 
-- BASIC line 1060 reads the end flag with `peek(32941)` = $80ad, which is a branch operand inside `round_loop`
+Patches live in `PATCHES` in `tools/build.py`.
+
+- BASIC line 1060 read the end flag with `peek(32941)` = $80ad, which is a branch operand inside `round_loop`
   (always 3), so the winner is always decided by points. The flag is `game_over_flags` at $80b6 (32950):
   1 = yellow lost all copters (red wins), 2 = red did. The BASIC's own test (`x=1` red wins, `x=2` yellow wins) matches it.
+  Fixed at $0f89: `32941` → `32950`. Checked with `tools/test_end.py`: a knockout now shows "red/yellow copter wins!", where it showed "equal points!" before.
 
 ## BASIC structure (line numbers)
 

@@ -22,6 +22,11 @@ A disassembly of the C64 game "Copter Duel" (1987, Ronald Mayer), taken from a c
 # Reassemble the output (-i allows illegal opcodes)
 64tass -i -o out/copterduel.prg out/copterduel.asm
 
+# Build the fixed game: build/copterduel.prg (LOAD, RUN; starts with the crack's trainer menu)
+tools/build.py
+# Check the end-of-round message in VICE (01 = yellow knocked out, 02 = red)
+tools/test_end.py build/copterduel.prg 01 fixed /tmp/somewhere
+
 # Rebuild the snapshot from the PRG (runs x64sc in warp via its remote monitor)
 tools/snapshot.py copterduel.prg copterduel.vsf
 
@@ -38,9 +43,13 @@ A good run has `0 differ`. A run with errors (e.g. an area conflict) writes noth
   - a **BASIC program** at $0801-$175e (title, playfield drawn with PRINT, scores, round loop). It is not disassembled; see `copterduel_basic.txt`.
   - a **machine code engine**: `sys32768` ($8000) plays one round; $8800 and $8803 are the screen-window routines the BASIC calls as `sysws`/`syswc`.
 
-  The two parts talk through fixed addresses (scores on screen at $4049/$4251, end flag at $80ad).
-- The cracker's code at $2f00-$3229 (reset, BASIC RUN, trainer menu) is not part of the original game. Its trainer pokes (into $8499, $8608, $1700/$1702, $09a7) point at the lives, energy, or ammo logic.
+  The two parts talk through fixed addresses (scores on screen at $4049/$4251, end flag `game_over_flags` at $80b6).
+- The cracker's code at $2f00-$3229 (reset, BASIC RUN, trainer menu) is not part of the original game. Its trainer pokes are at $8499 (yellow's lost copter), $8608 (red's score), $1700/$1702 (red's copter icons) and $09a7 (the BASIC's LOAD becomes a REM).
 - Video uses VIC bank 1: screen at $4000, character set at $7800.
+
+## Making changes
+
+The game isn't rebuilt from `out/copterduel.asm`. Fixes are byte patches in `PATCHES` in `tools/build.py`, applied to the snapshot's RAM, each one checking the original bytes. The PRG puts a `SYS 12673` stub over the BASIC head. crack_start ($3181) restores the head from $2ec0 and RUNs the BASIC program. Test fixes in VICE through the remote monitor (see `tools/test_end.py`).
 
 ## Deflower gotchas seen here
 
