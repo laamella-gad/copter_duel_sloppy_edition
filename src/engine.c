@@ -30,6 +30,13 @@
 
 #define GROUND_Y        0xe8
 
+// Copter physics: positions and speeds are 8.8 fixed point (the high byte is
+// the sprite's pixel position). Each pass the joystick adds THRUST to the
+// speed and drag takes 1/2^DRAG_SHIFT of it away, so the top speed is
+// THRUST << DRAG_SHIFT: 1 pixel per pass, the original's only speed.
+#define THRUST          16
+#define DRAG_SHIFT      4
+
 struct Player
 {
 	char                sprite;         // copter sprite; the rocket is sprite + 2
@@ -41,6 +48,9 @@ struct Player
 	volatile char     * other_score;
 	char                home_x, colour, home_pointer;
 	char                lost_flag;
+
+	unsigned            x, y;           // position, 8.8 fixed point
+	int                 dx, dy;         // speed in pixels per pass, 8.8 fixed point
 
 	char                turn_delay;     // frames until the next turn step
 	char                rocket;         // 0 none, 1 flying right, 2 flying left
@@ -106,6 +116,22 @@ rotor_done:
 	jmp $ea31
 }
 
+// Moves the copter's sprite to its position
+static void place(struct Player * p)
+{
+	vic.spr_pos[p->sprite].x = p->x >> 8;
+	vic.spr_pos[p->sprite].y = p->y >> 8;
+}
+
+// Takes 1/2^DRAG_SHIFT of the speed away, at least 1/256 pixel so it ends at 0
+static int drag(int v)
+{
+	int d = v >> DRAG_SHIFT;
+	if (!d && v > 0)
+		d = 1;
+	return v - d;
+}
+
 // Adds 1 to digit x of a score (x = 4: 1 point, 3: 10, 2: 100)
 static void score_add(volatile char * score, signed char x)
 {
@@ -144,6 +170,7 @@ static void hit(struct Player * p)
 		sid.voices[1].ctrl = SID_CTRL_NOISE;
 		vic.spr_color[s] = 8;
 		p->explosion_step = 0;
+		p->dx = p->dy = 0;
 		score_add(p->other_score, 2);
 		return;
 	}
@@ -176,11 +203,21 @@ static void hit(struct Player * p)
 		p->rocket_bar[i] = BAR_FULL;
 	}
 	vic.spr_multi &= ~(1 << s);
-	vic.spr_pos[s].y = 0xe4;
-	vic.spr_pos[s].x = p->home_x;
+	p->x = p->home_x << 8;
+	p->y = 0xe4 << 8;
+	place(p);
 	vic.spr_color[s] = p->colour;
 	sprite_pointers[s] = p->home_pointer;
 	vic.spr_backcol = 0;
+}
+
+static void sink(struct Player * p)
+{
+	if (p->y < (unsigned)GROUND_Y << 8)
+	{
+		p->y += 0x100;
+		place(p);
+	}
 }
 
 // Every 30 frames both copters sink one pixel
@@ -192,10 +229,8 @@ static void gravity(void)
 		return;
 	}
 	gravity_delay = 30;
-	if (vic.spr_pos[0].y < GROUND_Y)
-		vic.spr_pos[0].y++;
-	if (vic.spr_pos[1].y < GROUND_Y)
-		vic.spr_pos[1].y++;
+	sink(&yellow);
+	sink(&red);
 }
 
 // The joystick: fly, turn, fire. While exploding: the explosion
@@ -220,19 +255,15 @@ static void control(struct Player * p)
 	}
 
 	if (!(*p->joystick & 0x01))
-		vic.spr_pos[s].y--;
-
+		p->dy -= THRUST;
 	if (!(*p->joystick & 0x02))
-	{
-		if (vic.spr_pos[s].y < GROUND_Y)
-			vic.spr_pos[s].y++;
-	}
+		p->dy += THRUST;
 
 	// Left: turn towards the left, then fly left; right the other way
 	if (!(*p->joystick & 0x04))
 	{
 		if ((sprite_pointers[s] | 0x08) < 0x19)
-			vic.spr_pos[s].x--;
+			p->dx -= THRUST;
 		else if (p->turn_delay)
 			p->turn_delay--;
 		else
@@ -244,7 +275,7 @@ static void control(struct Player * p)
 	else if (!(*p->joystick & 0x08))
 	{
 		if ((sprite_pointers[s] | 0x08) >= COPTER_LEFT)
-			vic.spr_pos[s].x++;
+			p->dx += THRUST;
 		else if (p->turn_delay)
 			p->turn_delay--;
 		else
@@ -253,6 +284,18 @@ static void control(struct Player * p)
 			sprite_pointers[s]++;
 		}
 	}
+
+	p->dx = drag(p->dx);
+	p->dy = drag(p->dy);
+	p->x += p->dx;
+	p->y += p->dy;
+	if (p->y >= (unsigned)GROUND_Y << 8)
+	{
+		p->y = (unsigned)GROUND_Y << 8;
+		if (p->dy > 0)
+			p->dy = 0;
+	}
+	place(p);
 
 	// Fire, unless a rocket is flying or the copter faces the screen
 	if (p->rocket)
@@ -475,6 +518,11 @@ void play_round(void)
 	bonus_delay = 0;
 	bonuses_placed = 0;
 	odd_frame = 0;
+	yellow.x = vic.spr_pos[0].x << 8;
+	yellow.y = vic.spr_pos[0].y << 8;
+	red.x = vic.spr_pos[1].x << 8;
+	red.y = vic.spr_pos[1].y << 8;
+	yellow.dx = yellow.dy = red.dx = red.dy = 0;
 
 	cia2.ta = LOOP_CYCLES - 1;
 	cia2.cra = 0x11;	// start, continuous
