@@ -33,11 +33,11 @@ with an intro by Terrance & Phillip and a trainer (the "+" in the name).
    - $2f00: resets like the KERNAL does, calls the trainer menu, sets the BASIC pointers to $175e,
      then CLR ($a659), relink ($a533) and RUN ($a7ae).
    - $3100 trainer menu: three y/n questions (input routine $3200), answers in $2ff0-$2ff2. A "yes" patches:
-     - $2ff0 → `$2c` (BIT abs) at $8499
-     - $2ff1 → `$2c` at $8608
-     - $2ff2 → `$3d` at $1700 and $1702 (in the BASIC program)
+     - "Unlimited lives for Texans?" (yellow): `$2c` (BIT abs) at $8499 `yellow_lose_copter`, so no icon is crossed out
+     - "No points for Canadians?" (red): `$2c` at $8608 `red_score_inc`
+     - "1 life only for Canadians?": `$3d` (lost copter) at $1700 and $1702, two of red's icons in BASIC line 1107
 
-     The menu also always writes `$8f` to $09a7 (BASIC). The snapshot is from before the menu, so it holds the unpatched game.
+     The menu also always writes `$8f` (REM) to $09a7, over the `LOAD` of BASIC line 1011. The snapshot is from before the menu, so it holds the unpatched game.
 
 ## Memory map of the game
 
@@ -46,13 +46,36 @@ with an intro by Terrance & Phillip and a trainer (the "+" in the name).
 | $0801-$175e | BASIC program: title, playfield drawn with PRINT, score screen, main loop |
 | $2f00-$3229 | Crack: reset/RUN and trainer menu |
 | $4000-$43ff | Screen (VIC bank 1: `poke56576,2`, `poke53272,15`, `poke648,64`) |
-| $4000+ | Sprite pointers at $43f8 (`poke17400+i`) |
+| $43f8 | Sprite pointers (`poke17400+i`): 0 yellow copter, 1 red copter, 2 yellow rocket, 3 red rocket |
 | $4049, $4251 | Player scores as 5 screen digits (BASIC reads `peek(16457+i)`, `peek(16977+i)`) |
+| $4400-$4cc0 | Sprites: $10-$1f copter (two rotor frames x 8 headings), $20 rocket, $21-$2a explosion, $2b-$32 title |
 | $7800-$7fff | Character set |
 | $8000 | ML engine: `sys32768` plays one round |
-| $80ad | End flag (`peek(32941)`): 1 = red wins, 2 = yellow wins |
+| $80b6 | `game_over_flags`: bit 0 = yellow has no copters left, bit 1 = red (see the bug below) |
 | $8800 | `sysws,addr,w,h,c`: screen window routine (ws = 34816) |
 | $8803 | `syswc` (wc = 34819) |
+
+## The engine ($8000-$8a6c)
+
+Everything is labelled in `copterduel.flo`. In short:
+- `game_main` points the IRQ at `irq_rotor_animation` and clears the state; `round_loop` runs once per frame until
+  `game_over_flags` is set and both explosions are over.
+- Yellow is the joystick in port 2 (`$dc00`), red the one in port 1 (`$dc01`). Each frame: `gravity`, `*_control`,
+  `*_rocket_move`, `*_tick`, `collisions`, `*_rocket_bonus`, and every other frame `place_bonuses`.
+- Status bars are screen characters: energy and rockets go from $23 (full) to $27 (empty); copter icons are $5b, a lost one $3d.
+- A hit (`yellow_hit`/`red_hit`) runs the explosion; afterwards a copter is lost, and the other player gets 100 points.
+- Every 250 frames a player gets 1 point and loses a unit of energy (`*_tick`); out of energy is a crash.
+- Rockets pick up bonuses: $3a 10 points, $3b 3 rockets, $3c 5 energy.
+- `yellow_score_add_1/10/100` share code: `ldx #4`, then a `$2c` byte (BIT abs) that skips the next `ldx`. That's why
+  deflower warns about jumps into instructions at $85d7/$85da and $85f3/$85f6. The warnings are expected.
+- `window_open`/`window_close` ($8800/$8803) are the BASIC's `sysws`/`syswc`: framed windows with a stack of 6,
+  saving the covered screen into the RAM under the BASIC ROM ($a000 characters, $b800 colours).
+
+## Known bugs
+
+- BASIC line 1060 reads the end flag with `peek(32941)` = $80ad, which is a branch operand inside `round_loop`
+  (always 3), so the winner is always decided by points. The flag is `game_over_flags` at $80b6 (32950):
+  1 = yellow lost all copters (red wins), 2 = red did. The BASIC's own test (`x=1` red wins, `x=2` yellow wins) matches it.
 
 ## BASIC structure (line numbers)
 
@@ -63,5 +86,4 @@ with an intro by Terrance & Phillip and a trainer (the "+" in the name).
 
 ## Deflower status
 
-0 differ. Still open: gaps in the ML at $803b-$8063, $8a2a-$8a6c and others, the ML's data and variables,
-and code that jumps into the middle of instructions at $85d6/$85f2 (the BIT skip trick).
+0 differ, 0 gaps; every routine, variable and table is labelled. The only warnings are from the BIT skip trick.
