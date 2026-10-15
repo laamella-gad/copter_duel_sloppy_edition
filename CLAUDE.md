@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A disassembly of the C64 game "Copter Duel" (1987, Ronald Mayer), taken from a cracked tape image (`COPTERDU.T64`), with the goal of understanding it and improving some features. There is no source code: the work is annotating `copterduel.flo` for the [Deflower](../deflower) disassembler. `NOTES.md` holds everything learned so far (packer layers, crack/trainer, memory map, BASIC structure). Read it first and keep it up to date as you learn more.
+A disassembly of the C64 game "Copter Duel" (1987, Ronald Mayer), taken from a cracked tape image (`COPTERDU.T64`), with the goal of understanding it and improving some features. The disassembly is `copterduel.flo`, annotations for the [Deflower](../deflower) disassembler. `src/` is the game rewritten in C for [oscar64](~/dev/oscar64) (docs: `~/dev/oscar64/oscar64.md`). `NOTES.md` holds everything learned so far (packer layers, crack/trainer, memory map, BASIC structure). Read it first and keep it up to date as you learn more.
 
 ## Commands
 
@@ -26,6 +26,11 @@ A disassembly of the C64 game "Copter Duel" (1987, Ronald Mayer), taken from a c
 tools/build.py
 # Check the end-of-round message in VICE (01 = yellow knocked out, 02 = red)
 tools/test_end.py build/copterduel.prg 01 fixed /tmp/somewhere
+
+# Build the C version: build/copterduel_c.prg (+ .asm, .map, .lbl listings)
+make
+# Same end-of-round test for the C version
+tools/test_end.py build/copterduel_c.prg 01 c /tmp/somewhere
 
 # Rebuild the snapshot from the PRG (runs x64sc in warp via its remote monitor)
 tools/snapshot.py copterduel.prg copterduel.vsf
@@ -50,6 +55,10 @@ A good run has `0 differ`. A run with errors (e.g. an area conflict) writes noth
 ## Making changes
 
 The game isn't rebuilt from `out/copterduel.asm`. Fixes are byte patches in `PATCHES` in `tools/build.py`, applied to the snapshot's RAM, each one checking the original bytes. The PRG puts a `SYS 12673` stub over the BASIC head. crack_start ($3181) restores the head from $2ec0 and RUNs the BASIC program. Test fixes in VICE through the remote monitor (see `tools/test_end.py`).
+
+## The C version
+
+`src/copterduel.c` is the BASIC program and includes `engine.c` (the $8000 engine) and `window.c` (`sysws`/`syswc`) through `#pragma compile` in their headers. It must behave like the original: keep it a faithful port of the BASIC lines and routines in `copterduel.flo`, and check changes against the original in VICE (`tools/test_end.py` works on both builds). Code and data live at $0a00-$4000 because VIC bank 1 ($4000-$7fff) holds the screen, sprites and character set. See NOTES.md for timing and layout details.
 
 ## Deflower gotchas seen here
 

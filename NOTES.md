@@ -13,7 +13,9 @@ Disassembled with [Deflower](../deflower): `../deflower/deflower --verify copter
 | `copterduel.flo` | Deflower annotations for `copterduel.vsf` |
 | `copterduel_basic.txt` | The game's BASIC program, listed with `petcat -2` |
 | `tools/build.py` | Builds `build/copterduel.prg` from the snapshot, with the fixes: `LOAD`, `RUN` |
-| `tools/test_end.py` | VICE test of the end-of-round message |
+| `tools/test_end.py` | VICE test of the end-of-round message (original or C build) |
+| `src/` | The game rewritten in C for oscar64: `make` → `build/copterduel_c.prg` |
+| `tools/extract_assets.py` | Writes the sprites and character set from the snapshot to `build/` for the C build |
 | `tools/snapshot.py` | Remakes `copterduel.vsf`: `tools/snapshot.py copterduel.prg copterduel.vsf` |
 
 ## The game
@@ -88,6 +90,24 @@ Patches live in `PATCHES` in `tools/build.py`.
 - 1017-1048: title screen ("mr-soft presents", sprites, "press any key or button to start")
 - 1049-1078: game: `gosub1079` draws the screen, `sys32768` plays, then the winner and back to the title
 - 1079-1109: playfield and status panels (energy, rockets, copters) for yellow (top) and red (bottom)
+
+## The C version (`src/`)
+
+The whole game without the crack intro and trainer, with the line 1060 fix, compiled with oscar64 (`make`).
+- `copterduel.c` is the BASIC program (comments give the line numbers): it prints through the KERNAL (`$ffd2`)
+  with the same PETSCII strings, so the screen editor draws the same screens. BASIC FOR delays are KERNAL jiffies:
+  measured in VICE, `forj=1to2000:next` is 124 jiffies and the title fade's `forj=1to70:nextj,i` about 7.
+- `engine.c` is the engine at $8000, one function per routine; the yellow/red copies of a routine are one function
+  taking a `struct Player`. Differences kept on purpose: yellow's down move stops only at y = $e8, red's at y >= $e8;
+  the row table is read past its end for rockets above row 0, so the bytes after it are kept.
+- The rotor animation IRQ is the original routine as inline assembler, chained to the KERNAL at $ea31.
+- `round_loop` had no raster sync: one pass took 13136 cycles on average (measured in VICE, 12580-13616).
+  The C loop is paced to that with CIA 2 timer A.
+- `window.c` is `sysws`/`syswc`, saving into arrays instead of the RAM under the BASIC ROM.
+- Memory: code and variables at $0a00-$4000; sprites at $4400 and the character set at $7800 are `#embed`ded from
+  `build/sprites.bin`/`build/charset.bin` (made from the snapshot by `tools/extract_assets.py`).
+- Checked in VICE: title and playfield (screen and colour RAM) match the original, the end windows match byte for byte,
+  and `tools/test_end.py build/copterduel_c.prg 01|02 ...` shows "red/yellow copter wins!".
 
 ## Deflower status
 
