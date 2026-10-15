@@ -41,7 +41,6 @@ struct Player
 	volatile char     * other_score;
 	char                home_x, colour, home_pointer;
 	char                lost_flag;
-	bool                strict_ground;  // red: down stops at >= GROUND_Y, yellow only at == GROUND_Y
 
 	char                turn_delay;     // frames until the next turn step
 	char                rocket;         // 0 none, 1 flying right, 2 flying left
@@ -54,12 +53,12 @@ struct Player
 
 static struct Player yellow = {
 	0, &cia1.pra, screen + 0x0c0, screen + 0x138, screen + 0x1b1, yellow_score, red_score,
-	0x28, 7, 0x17, 0x01, false
+	0x28, 7, 0x17, 0x01
 };
 
 static struct Player red = {
 	1, &cia1.prb, screen + 0x2c8, screen + 0x340, screen + 0x3b9, red_score, yellow_score,
-	0xe6, 2, 0x10, 0x02, true
+	0xe6, 2, 0x10, 0x02
 };
 
 char game_over_flags;
@@ -76,14 +75,12 @@ static const char bonus_chars[4] = {BONUS_POINTS, BONUS_ROCKETS, BONUS_POINTS, B
 // The screen quarters a bonus is placed in, at an 8 bit offset each
 static volatile char * const bonus_areas[4] = {screen, screen + 0x0d8, screen + 0x1d2, screen + 0x2cc};
 
-// Start addresses of the screen rows, low bytes then high bytes. A rocket
-// above row 0 reads past both tables, so the bytes after them are kept too.
-static const char screen_rows[25 + 25 + 15] = {
+// Start addresses of the screen rows, low bytes then high bytes
+static const char screen_rows[25 + 25] = {
 	0x00, 0x28, 0x50, 0x78, 0xa0, 0xc8, 0xf0, 0x18, 0x40, 0x68, 0x90, 0xb8, 0xe0, 0x08, 0x30, 0x58,
 	0x80, 0xa8, 0xd0, 0xf8, 0x20, 0x48, 0x70, 0x98, 0xc0,
 	0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x42, 0x42, 0x42,
-	0x42, 0x42, 0x42, 0x42, 0x43, 0x43, 0x43, 0x43, 0x43,
-	0x40, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42, 0x43
+	0x42, 0x42, 0x42, 0x42, 0x43, 0x43, 0x43, 0x43, 0x43
 };
 
 // Every other IRQ: toggles the copters between rotor frames, then the KERNAL IRQ
@@ -195,9 +192,9 @@ static void gravity(void)
 		return;
 	}
 	gravity_delay = 30;
-	if (vic.spr_pos[0].y != GROUND_Y)
+	if (vic.spr_pos[0].y < GROUND_Y)
 		vic.spr_pos[0].y++;
-	if (vic.spr_pos[1].y != GROUND_Y)
+	if (vic.spr_pos[1].y < GROUND_Y)
 		vic.spr_pos[1].y++;
 }
 
@@ -227,8 +224,7 @@ static void control(struct Player * p)
 
 	if (!(*p->joystick & 0x02))
 	{
-		char y = vic.spr_pos[s].y;
-		if (p->strict_ground ? y < GROUND_Y : y != GROUND_Y)
+		if (vic.spr_pos[s].y < GROUND_Y)
 			vic.spr_pos[s].y++;
 	}
 
@@ -415,6 +411,9 @@ static void rocket_bonus(struct Player * p)
 
 	char column = (char)(vic.spr_pos[s].x - 0x1a) >> 3;
 	char row = (char)(vic.spr_pos[s].y - 0x30) >> 3;
+	// The cell is one row down and two columns right; none off the screen
+	if (row >= 24 || column >= 38)
+		return;
 	volatile char * cell = (volatile char *)((screen_rows[25 + row] << 8 | screen_rows[row]) + column + 0x2a);
 
 	switch (*cell)

@@ -40,8 +40,8 @@ annotations `copterduel.flo`, the BASIC listing, and the byte-patch build) is in
 - A hit runs the explosion; afterwards a copter is lost, and the other player gets 100 points.
 - Every 250 passes a player gets 1 point and loses a unit of energy; out of energy is a crash.
 - Rockets pick up bonuses: $3a 10 points, $3b 3 rockets, $3c 5 energy.
-- Quirks kept on purpose: yellow's down move stops only at y = $e8, red's at y >= $e8; the row table is read past
-  its end for rockets above row 0, so the bytes after it are kept.
+- Copters stop sinking and moving down at y = $e8. A rocket picks up the bonus one row down and two columns right of
+  its top left corner.
 
 ## Timing
 
@@ -56,10 +56,16 @@ annotations `copterduel.flo`, the BASIC listing, and the byte-patch build) is in
 code macros), so the screen editor draws the same screens. Windows save what they cover into arrays (the original
 used the RAM under the BASIC ROM).
 
-## Fixed bug
+## Fixed bugs
 
 The original BASIC read the end flag from the wrong address (`peek(32941)` instead of 32950), so the winner was always
 decided by points, even after a knockout. The C version uses `game_over_flags`: a knockout shows "red/yellow copter wins!".
+
+Two quirks of the engine are fixed too:
+- Yellow's down move and gravity stopped only at y = $e8 exactly (red's down move at y >= $e8); both copters now
+  stop at y >= $e8.
+- A rocket above row 0 or at the bottom row computed its bonus cell past the end of the screen row table, reading
+  whatever bytes followed it; rockets off the screen grid now pick up nothing.
 
 ## Checked in VICE
 
