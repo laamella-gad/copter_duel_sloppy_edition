@@ -1,4 +1,4 @@
-// The round: a port of the machine code engine at $8000 (see copterduel.flo).
+// The round: a port of the machine code engine at $8000 (sys32768 in the original).
 // Yellow is sprite 0 with its rocket in sprite 2, joystick port 2;
 // red is sprite 1 with its rocket in sprite 3, joystick port 1.
 #include "engine.h"

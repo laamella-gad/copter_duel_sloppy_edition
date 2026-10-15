@@ -1,7 +1,6 @@
 // Copter Duel, (c) 1987 Ronald Mayer: the game rewritten in C for oscar64.
-// This file is the BASIC program (line numbers in the comments, see
-// copterduel_basic.txt); engine.c is the machine code round, window.c the
-// window routines. The crack intro and trainer are left out.
+// This file is the original's BASIC program (the comments give its line
+// numbers); engine.c is its machine code round, window.c its window routines.
 #include <c64/vic.h>
 #include <c64/cia.h>
 #include "engine.h"
@@ -20,11 +19,11 @@
 
 #pragma data(sprites)
 __export const char sprite_data[] = {
-	#embed "../build/sprites.bin"
+	#embed "sprites.bin"
 };
 #pragma data(charset)
 __export const char charset_data[] = {
-	#embed "../build/charset.bin"
+	#embed "charset.bin"
 };
 #pragma data(data)
 
