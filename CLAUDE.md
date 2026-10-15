@@ -9,9 +9,10 @@ The C64 game "Copter Duel" (1987, Ronald Mayer) rewritten in C for [oscar64](~/d
 ## Commands
 
 ```sh
-# Build: build/copterduel.prg (+ .asm, .map, .lbl listings)
+# Build: build/copterduel.prg (+ .asm, .map, .lbl listings) and the pucrunched
+# build/copterduel_crunched.prg
 make
-# Build and run in VICE (X64=x64 etc. to pick another emulator)
+# Build and run the crunched PRG in VICE (X64=x64 etc. to pick another emulator)
 make run
 # Check the end-of-round message in VICE (01 = yellow knocked out, 02 = red)
 tools/test_end.py build/copterduel.prg 01 /tmp/somewhere
