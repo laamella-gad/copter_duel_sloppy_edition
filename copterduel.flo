@@ -1,0 +1,40 @@
+; copterduel.vsf: VICE snapshot of a C64SC
+; $01 = $37: BASIC in, KERNAL in, I/O in
+; CPU: PC $3181 A $37 X $00 Y $00 SP $f4 P $25
+; stack $01f5-$0200: 59 01 46 e1 e9 a7 a7 79 a6 9c e3
+; top of stack as a jsr return address: $015a
+; top of stack as an interrupt's return address: $4601
+; IRQ $0314 -> $ea31 (ROM)
+; BRK $0316 -> $fe66 (ROM)
+; NMI $0318 -> $fe47 (ROM)
+; VIC bank 0 ($0000-$3fff), text, screen $0400, charset $1000 (ROM)
+; interrupt sources: CIA1 timer A (IRQ), IRQs masked by the I flag
+; BASIC program $0801-$2846
+deflower copterduel.vsf
+$3181 code crack_start
+; cracker's trainer menu: asks y/n, patches the game
+$3100 code trainer_menu
+; cracker's reset + BASIC RUN of the game
+$2f00 code crack_run_basic
+; the BASIC program (game logic, title, screens)
+$0801-$175e byte basic_program
+; machine code engine: sys32768 runs one game
+$8000 code game_main
+; sysws (34816) and syswc (34819)
+$8800 code ml_window
+$8803 code ml_window_clear
+$175e-$2ec1 virtual byte unused_175e
+$2f84-$2fe0 virtual byte unused_2f84
+$318e-$3200 virtual byte unused_318e
+$4a74-$4ac0 virtual byte unused_4a74
+$4cbc-$7800 virtual byte unused_4cbc
+$7b00-$8000 virtual byte unused_7b00
+$8a6c-$8b00 virtual byte untouched_8a6c
+$8b00-$8c03 virtual byte unused_8b00
+$8c03-$a000 virtual byte untouched_8c03
+$a000-$c000 virtual byte untouched_a000
+$c000-$d000 virtual byte untouched_c000
+$e000-$e531 virtual byte untouched_e000
+$e551-$fd30 virtual byte untouched_e551
+$fd50-$10000 virtual byte untouched_fd50
+include c64.flo

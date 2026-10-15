@@ -1,0 +1,110 @@
+ 1000 rem##############################
+ 1001 rem# copter duel           main #
+ 1002 rem#----------------------------#
+ 1003 rem#     (c) copyright 1987     #
+ 1004 rem#----------------------------#
+ 1005 rem#        ronald mayer        #
+ 1006 rem#         thening 24         #
+ 1007 rem#   a-4062 thening/austria   #
+ 1008 rem##############################
+ 1009 ifa=1then1012
+ 1010 poke53281,0:poke53280,0:print"{clr}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{gry3}please wait..."
+ 1011 a=1:ga=peek(186):load"copter",ga,1
+ 1012 poke56,63:clr
+ 1013 v=53248:s=54272:ws=34816:wc=ws+3
+ 1014 printchr$(8)
+ 1015 poke56576,2:poke53272,15:poke648,64:printchr$(147)
+ 1016 pokev+21,0:pokev+16,0:pokev+23,0:pokev+29,0:pokev+34,7:pokev+35,9
+ 1017 rem##############################
+ 1018 rem# titel                      #
+ 1019 rem##############################
+ 1020 printchr$(147);:pokev+21,0
+ 1021 pokev+22,200:pokev+33,0:pokev+32,0
+ 1022 pokev+28,255:pokev+37,7:pokev+38,9
+ 1023 fori=0to5:pokev+39+i,10:next
+ 1024 pokev+45,7:pokev+46,7
+ 1025 f(0)=11:f(1)=12:f(2)=15:f(3)=1:f(4)=15:f(5)=12:f(6)=11
+ 1026 fori=0to24:pokes+i,0:next
+ 1027 pokes+6,240:pokes+4,64:pokes+4,65:pokes+2,1:pokes+3,1:pokes+24,15
+ 1028 pokes+13,250:pokes+11,128:pokes+8,10
+ 1029 fori=0to3
+ 1030 poke646,f(i)
+ 1031 print"{home}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{rght}mr-soft  presents"
+ 1032 forj=1to70:nextj,i
+ 1033 forj=1to2000:next
+ 1034 fori=4to6
+ 1035 poke646,f(i)
+ 1036 print"{home}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{rght}mr-soft  presents"
+ 1037 forj=1to70:nextj,i
+ 1038 printchr$(147)
+ 1039 fori=1to11step2
+ 1040 pokev+i,80:next
+ 1041 fori=0to10step2
+ 1042 pokev+i,110+i*12.5:next
+ 1043 fori=0to7
+ 1044 poke17400+i,43+i:next
+ 1045 pokev+12,160:pokev+14,184:pokev+13,110:pokev+15,110:pokev+21,255
+ 1046 print"{home}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{lblu}@ 1987 by ronald mayer"
+ 1047 print"{down}{down}{down}{down}{rght}{rght}{rght}{rght}{grn}press any key or button to start"
+ 1048 ifpeek(203)=64andpeek(56320)=127andpeek(56321)=255then1048
+ 1049 rem##############################
+ 1050 rem# game                       #
+ 1051 rem##############################
+ 1052 pokev+21,0:printchr$(147)
+ 1053 pokev+32,8:pokev+33,14:pokev+34,11:pokev+35,8:pokev+22,216:gosub1079
+ 1054 pokev+28,240:poke17400,22:poke17401,17:poke17402,32:poke17403,32
+ 1055 poke17404,33:poke17405,33
+ 1056 pokev+39,7:pokev+40,2:pokev+41,0:pokev+42,0:pokev+43,8:pokev+44,8
+ 1057 pokev+45,3:pokev+46,13:pokev+27,255:pokev+30,0:pokev+31,0
+ 1058 pokev+0,40:pokev+2,230:pokev+1,225:pokev+3,225:pokev+21,3
+ 1059 pokes,190:sys32768:pokes,0
+ 1060 x=peek(32941)     :rem endflag
+ 1061 p1$="":fori=0to4:p1$=p1$+chr$(peek(16457+i)):next:p1=val(p1$)
+ 1062 p2$="":fori=0to4:p2$=p2$+chr$(peek(16977+i)):next:p2=val(p2$)
+ 1063 sysws,16384+242,26,10,3
+ 1064 sysws,16384+283,24,8,6
+ 1065 print"{home}{down}{down}{down}{down}{down}{down}{down}{down}{down}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{red}game over"
+ 1066 ifx<>2then1069
+ 1067 print"{down}{down}{down}{rght}{rght}{rght}{rght}{rght}{rght}{yel}yellow copter wins!"
+ 1068 goto1076
+ 1069 ifx<>1then1072
+ 1070 print"{down}{down}{down}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{red}red copter wins!"
+ 1071 goto1076
+ 1072 ifp1>p2thenx=2:goto1066
+ 1073 ifp2>p1thenx=1:goto1066
+ 1074 print"{down}{down}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{wht}both players have"
+ 1075 print"{rght}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{rght}{wht}equal points!"
+ 1076 pokev+21,0:fori=1to2000:next
+ 1077 ifpeek(203)=64andpeek(56320)=127andpeek(56321)=255then1077
+ 1078 syswc:syswc:syswc:goto1017
+ 1079 rem##############################
+ 1080 rem# screen                     #
+ 1081 rem##############################
+ 1082 pokev+17,0
+ 1083 printchr$(147);
+ 1084 print"{gry3}DEABC{SHIFT-*}{SHIFT-*}DEGABBGABGAEABBGEGABEAC{SHIFT-*}{yel}\(((((((]";
+ 1085 print"{gry3}P   LBCQ                     LC{yel}*={blk}00000={yel}+";
+ 1086 print"{gry3}R     LF                      J{yel}*=======+";
+ 1087 print"{gry3}P                NM          NK{yel}*{blk}energy={yel}+";
+ 1088 print"{gry3}R             NWXKQ          LC{yel}*{brn}#######{yel}+";
+ 1089 print"{gry3}P       NSWTUXK{SHIFT-*}{SHIFT-*}{SHIFT-*}Q     NSM   H{yel}*=======+";
+ 1090 print"{gry3}Q       LBEGAEGABGF     LCP   I{yel}*{blk}rockets{yel}+";
+ 1091 print"{gry3}R                        LF   J{yel}*{brn}#######{yel}+";
+ 1092 print"{gry3}P                             H{yel}*=======+";
+ 1093 print"{gry3}OM      NSWM       NM        NK{yel}*{blk}copters{yel}+";
+ 1094 print"{gry3}{SHIFT-*}OWSWXTVK{SHIFT-*}{SHIFT-*}OM      LF        LC{yel}*=[=[=[=+";
+ 1095 print"{gry3}DAEGBEAC{SHIFT-*}{SHIFT-*}{SHIFT-*}DF                 H{yel}^)))))))_";
+ 1096 print"{gry3}Q      LABCP            NM    J{SHIFT-*}{SHIFT-*}{SHIFT-*}{SHIFT-*}{SHIFT-*}{SHIFT-*}{SHIFT-*}{SHIFT-*}{SHIFT-*}";
+ 1097 print"{gry3}R         LF            LF    H{red}\(((((((]";
+ 1098 print"{gry3}P   NM                        I{red}*={blk}00000={red}+";
+ 1099 print"{gry3}Q   LF               NWXM     H{red}*=======+";
+ 1100 print"{gry3}P                    I{SHIFT-*}{SHIFT-*}OWTUXSK{red}*{blk}energy={red}+";
+ 1101 print"{gry3}R       NSWSWXTUM    LGC{SHIFT-*}{SHIFT-*}{SHIFT-*}{SHIFT-*}{SHIFT-*}{SHIFT-*}{SHIFT-*}{red}*{brn}#######{red}+";
+ 1102 print"{gry3}P       LABEGBGCP      LAEABEGC{red}*=======+";
+ 1103 print"{gry3}Q              IOM            H{red}*{blk}rockets{red}+";
+ 1104 print"{gry3}OM             LAF            J{red}*{brn}#######{red}+";
+ 1105 print"{gry3}{SHIFT-*}R     NM                     H{red}*=======+";
+ 1106 print"{gry3}DF     HQ       NWM    JQ     I{red}*{blk}copters{red}+";
+ 1107 print"{gry3}Q      HOSSWXTVSK{SHIFT-*}OSSM IP     H{red}*=[=[=[=+";
+ 1108 print"{gry3}OSYYYXXK{SHIFT-*}{SHIFT-*}{SHIFT-*}{SHIFT-*}{SHIFT-*}{SHIFT-*}{SHIFT-*}{SHIFT-*}{SHIFT-*}{SHIFT-*}{SHIFT-*}{SHIFT-*}{SHIFT-*}OSKOSYYYXK{red}^)))))))";
+ 1109 poke17383,31:poke56295,2:pokev+17,27:return
