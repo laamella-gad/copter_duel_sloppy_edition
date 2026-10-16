@@ -9,17 +9,13 @@ Copter Duel Sloppy Edition: the C64 game "Copter Duel" (1987, Ronald Mayer) rewr
 ## Commands
 
 ```sh
-# Build: build/copterduel.prg (+ .asm, .map, .lbl listings) and the pucrunched
-# build/copterduel_crunched.prg
+# Build: the pucrunched build/copterduel.prg, from build/copterduel_raw.prg
+# (+ .asm, .map, .lbl listings)
 make
-# Build and run the crunched PRG in VICE (X64=x64 etc. to pick another emulator)
+# Build and run it in VICE (X64=x64 etc. to pick another emulator)
 make run
-# Check the end-of-round message in VICE (01 = yellow knocked out, 02 = red)
-tools/test_end.py build/copterduel.prg 01 /tmp/somewhere
 ```
 
 ## Architecture
 
 `src/main.c` pulls in the other sources through `#pragma compile` in their headers; the files follow the game's parts (title, music, game, playfield, panel, player, copter, rocket, explosion, sound, window), listed in NOTES.md. Screens and timing follow the original; NOTES.md lists every difference (fixed bugs and gameplay changes). Code and data live at $0a00-$4000 because VIC bank 1 ($4000-$7fff) holds the screen, the sprites (`src/sprites.bin` at $4400), the title music (`src/gory_ghost.sid` at $5400, see `music.c`) and the character set (`src/charset.bin` at $7800), placed with `#pragma region` and `#embed`.
-
-Test in VICE through its remote monitor (see `tools/test_end.py`, which finds addresses in the oscar64 listings).

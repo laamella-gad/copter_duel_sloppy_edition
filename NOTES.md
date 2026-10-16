@@ -29,7 +29,6 @@ in the git history up to commit 86dd7cd.
 | `src/playfield_chars.bin` | The playfield's 1000 screen codes |
 | `src/playfield_colours.bin` | The playfield's 1000 colours |
 | `playfield.ctm` | The playfield as a CharPad project, for editing |
-| `tools/test_end.py` | VICE test of the end-of-round message |
 | `tools/ctm.py` | Converts the playfield to and from a CharPad project (`.ctm`) |
 
 ## Editing the playfield
@@ -144,5 +143,5 @@ Two quirks of the engine are fixed too:
 
 ## Checked in VICE
 
-Title and playfield (screen and colour RAM) matched the original, the end windows matched byte for byte, and
-`tools/test_end.py` shows the right winner for flags 01 and 02.
+Title and playfield (screen and colour RAM) matched the original, the end windows matched byte for byte, and the
+end-of-round message showed the right winner for both knockouts.

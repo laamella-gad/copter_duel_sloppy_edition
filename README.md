@@ -30,6 +30,6 @@ history up to commit 86dd7cd. `NOTES.md` has the details.
 Needs oscar64 and pucrunch; `make run` also needs VICE.
 
 ```sh
-make        # build/copterduel_crunched.prg
+make        # build/copterduel.prg
 make run    # build and start it in VICE
 ```
