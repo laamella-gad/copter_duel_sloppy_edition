@@ -1,7 +1,7 @@
 # Copter Duel notes
 
 "Copter Duel", (c) 1987 Ronald Mayer (Austria), published as "mr-soft presents": a two-player helicopter duel for the
-C64. This project is the game rewritten in C for oscar64. The original was a BASIC program plus a machine code engine
+C64. This project, Copter Duel Sloppy Edition, is the game rewritten in C for oscar64. The original was a BASIC program plus a machine code engine
 (the round, at $8000) and window routines (at $8800); it was disassembled from a cracked tape image first. That work
 (the T64, VICE snapshots, the Deflower annotations `copterduel.flo`, the BASIC listing, and the byte-patch build) is
 in the git history up to commit 86dd7cd.

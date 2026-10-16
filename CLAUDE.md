@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-The C64 game "Copter Duel" (1987, Ronald Mayer) rewritten in C for [oscar64](~/dev/oscar64) (docs: `~/dev/oscar64/oscar64.md`), from a disassembly of the original. `NOTES.md` holds the details (memory map, engine, timing). Read it first and keep it up to date. The disassembly work is in the git history up to commit 86dd7cd.
+Copter Duel Sloppy Edition: the C64 game "Copter Duel" (1987, Ronald Mayer) rewritten in C for [oscar64](~/dev/oscar64) (docs: `~/dev/oscar64/oscar64.md`), from a disassembly of the original. `NOTES.md` holds the details (memory map, engine, timing). Read it first and keep it up to date. The disassembly work is in the git history up to commit 86dd7cd.
 
 ## Commands
 
