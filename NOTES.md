@@ -76,8 +76,10 @@ end of the set and colour the copy.
 - Sprite 4 is the explosion (multicolour, colour 8, frames $21-$2a, 9 passes each). A crashing copter or a rocket
   hitting the background moves it there and starts it over; there is one, so a new explosion cuts the running one
   short. It is only drawn: its collisions are ignored. Each explosion flashes the background (not the border)
-  black, white, black for 2 frames each (new). Its sound is the noise on voice 1: each explosion turns the
-  gate off and on to start it over, the end of the explosion turns it off.
+  black, white, black for 2 frames each (new). Its sound is the noise on voice 1: each explosion starts it
+  over with a hard restart (gate off and attack/decay and sustain/release 0 for 4 passes, ~53 ms, at least the 2 frames
+  advised on lemon64, then the envelope back and the gate on), the end of the explosion turns the gate off. Turning
+  the gate off and on at once didn't always sound (the SID's ADSR bug, worst on the 6581).
 - Firing a rocket starts a whoosh on voice 2 (new, the original was silent): noise falling from $3000 to $0800 in
   $0200 steps per pass, decay 300 ms.
 - A copter touching the background buzzes (new): a 70 Hz square wave on voice 2, sustain 10, from the pass after

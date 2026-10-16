@@ -13,8 +13,16 @@
 #define SCRAPE_FREQ     SID_FREQ_PAL(70)
 #define SCRAPE_WIDTH    0x0800
 
+// Voice 1's envelope: attack 0, decay 0, sustain 15, release 10
+#define EXPLOSION_AD    0x00
+#define EXPLOSION_SR    0xfa
+
+// Passes the gate stays off in a hard restart: at least 2 frames (40 ms)
+#define RESTART_PASSES  4
+
 static unsigned whoosh;
 static bool scraping, scrape_on;
+static char explosion_restart;
 
 void sound_setup(void)
 {
@@ -30,7 +38,7 @@ void sound_setup(void)
 	sid_reg[24] = 15;
 
 	// Voice 1: noise, sustain 15, release 10
-	sid_reg[13] = 250;
+	sid_reg[13] = EXPLOSION_SR;
 	sid_reg[11] = SID_CTRL_NOISE;
 	sid_reg[8] = 10;
 }
@@ -45,16 +53,22 @@ void sound_drone_off(void)
 	sid_reg[0] = 0;
 }
 
-// The gate goes off and on again, so the envelope starts over
+// A hard restart: the gate goes off and the envelope registers to 0 for
+// RESTART_PASSES passes (about 53 ms), then sound_update sets them back and
+// turns the gate on. Gating on again right away doesn't reliably start a
+// new attack, especially on the 6581 (the SID's ADSR bug).
 void sound_explosion(void)
 {
 	sid.voices[1].ctrl = SID_CTRL_NOISE;
-	sid.voices[1].ctrl = SID_CTRL_NOISE | SID_CTRL_GATE;
+	sid.voices[1].attdec = 0;
+	sid.voices[1].susrel = 0;
+	explosion_restart = RESTART_PASSES;
 }
 
 void sound_explosion_end(void)
 {
 	sid.voices[1].ctrl = SID_CTRL_NOISE;
+	explosion_restart = 0;
 }
 
 void sound_rocket(void)
@@ -77,6 +91,13 @@ void sound_scrape(void)
 // touched the background in the last pass
 void sound_update(void)
 {
+	if (explosion_restart && !--explosion_restart)
+	{
+		sid.voices[1].attdec = EXPLOSION_AD;
+		sid.voices[1].susrel = EXPLOSION_SR;
+		sid.voices[1].ctrl = SID_CTRL_NOISE | SID_CTRL_GATE;
+	}
+
 	if (whoosh > WHOOSH_END)
 	{
 		whoosh -= WHOOSH_STEP;
@@ -103,6 +124,9 @@ void sound_update(void)
 void sound_round_end(void)
 {
 	sid.voices[1].ctrl = SID_CTRL_NOISE;
+	sid.voices[1].attdec = EXPLOSION_AD;
+	sid.voices[1].susrel = EXPLOSION_SR;
+	explosion_restart = 0;
 	sid.voices[2].ctrl = SID_CTRL_NOISE;
 	whoosh = 0;
 	scraping = scrape_on = false;

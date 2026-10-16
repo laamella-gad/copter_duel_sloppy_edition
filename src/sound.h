@@ -9,7 +9,8 @@ void sound_setup(void);
 void sound_drone_on(void);
 void sound_drone_off(void);
 
-// Starts the explosion noise over; it sounds until sound_explosion_end, then fades
+// Starts the explosion noise over with a hard restart: silent for about
+// 53 ms, then it sounds until sound_explosion_end and fades
 void sound_explosion(void);
 void sound_explosion_end(void);
 
@@ -19,7 +20,8 @@ void sound_rocket(void);
 // A copter touches the background this pass: a low buzz while it lasts
 void sound_scrape(void);
 
-// Each pass of a round: the whoosh falls in pitch, the buzz starts or stops
+// Each pass of a round: a started explosion sounds, the whoosh falls in
+// pitch, the buzz starts or stops
 void sound_update(void);
 
 // Silences the explosion, the whoosh and the buzz
