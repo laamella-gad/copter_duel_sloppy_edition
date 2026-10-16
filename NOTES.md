@@ -15,8 +15,25 @@ annotations `copterduel.flo`, the BASIC listing, and the byte-patch build) is in
 | `src/window.c` | The original's window routines at $8800/$8803 (`sysws`/`syswc`) |
 | `src/sprites.bin` | Sprite blocks $10-$32, placed at $4400 |
 | `src/charset.bin` | The character set, placed at $7800 |
-| `src/playfield.bin` | The playfield: 1000 screen codes, then 1000 colours |
+| `src/playfield_chars.bin` | The playfield's 1000 screen codes |
+| `src/playfield_colours.bin` | The playfield's 1000 colours |
+| `playfield.ctm` | The playfield as a CharPad project, for editing |
 | `tools/test_end.py` | VICE test of the end-of-round message |
+| `tools/ctm.py` | Converts the playfield to and from a CharPad project (`.ctm`) |
+
+## Editing the playfield
+
+Edit `playfield.ctm` in CharPad (Free 2.86 or Pro), save it, then
+`tools/ctm.py import playfield.ctm src/playfield_chars.bin src/playfield_colours.bin [src/charset.bin]`.
+`tools/ctm.py export src/playfield_chars.bin src/playfield_colours.bin src/charset.bin playfield.ctm` makes the
+project again. Export writes CTM version 7, as CharPad Free saves; import reads versions 5, 7 and 9 (CharPad Pro).
+Don't use CharPad's map export: it has no colours and cuts character numbers to a byte.
+
+CharPad has no colour per screen cell, and CharPad Free no 1x1 tiles, so the project colours per character:
+characters 0-255 are the charset, and each extra colour a character has on the playfield is a copy of it after 255.
+On import a copy becomes the character below 256 with the same image and material; copies of characters that share
+their image (the blank $3d and $20) get a material of their own. To use a character in a new colour, copy it to the
+end of the set and colour the copy.
 
 ## Memory map
 
@@ -55,7 +72,7 @@ annotations `copterduel.flo`, the BASIC listing, and the byte-patch build) is in
 
 The original printed everything through the KERNAL. `copterduel.c` writes to the screen directly instead: texts are
 screen code literals (`s"..."`) put at the row and column the original's cursor moves reached, the playfield is
-`playfield.bin` copied to the screen and colour RAM. Like the KERNAL's clear, `clear_screen` fills the colour RAM with
+`playfield_chars.bin` and `playfield_colours.bin` copied to the screen and colour RAM. Like the KERNAL's clear, `clear_screen` fills the colour RAM with
 the colour of the last text. `@` (the copyright sign in this character set) is screen code 0, so it can't be in a
 string and is written separately. Windows save what they cover into arrays (the original used the RAM under the
 BASIC ROM).

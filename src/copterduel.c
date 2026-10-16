@@ -83,10 +83,12 @@ static bool no_key_or_button(void)
 	return PEEK(KEY_PRESSED) == 64 && cia1.pra == 127 && cia1.prb == 255;
 }
 
-// 1079-1109: the playfield and the status panels, yellow top, red bottom:
-// 1000 screen codes, then 1000 colours
-static const char playfield[2000] = {
-	#embed "playfield.bin"
+// 1079-1109: the playfield and the status panels, yellow top, red bottom
+static const char playfield_chars[1000] = {
+	#embed "playfield_chars.bin"
+};
+static const char playfield_colours[1000] = {
+	#embed "playfield_colours.bin"
 };
 
 static void draw_screen(void)
@@ -94,8 +96,8 @@ static void draw_screen(void)
 	vic.ctrl1 = 0;
 	for (unsigned i = 0; i < 1000; i++)
 	{
-		screen[i] = playfield[i];
-		colour_ram[i] = playfield[1000 + i];
+		screen[i] = playfield_chars[i];
+		colour_ram[i] = playfield_colours[i];
 	}
 	vic.ctrl1 = 27;
 }
