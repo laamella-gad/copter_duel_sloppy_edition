@@ -14,6 +14,7 @@ in the git history up to commit 86dd7cd.
 | `src/system.c` | Screen addresses, colours, joystick bits; text output, jiffy waits, key or button |
 | `src/sound.c` | The SID: the copters' drone (voice 0), the explosion noise (voice 1), the rocket whoosh (voice 2) |
 | `src/title.c` | "mr-soft presents" and the title screen |
+| `src/music.c` | The title music: the SID tune and its 50 Hz raster IRQ |
 | `src/game.c` | One game: playfield and sprites set up, the round loop, the winner |
 | `src/playfield.c` | Drawing the playfield; placing the bonuses |
 | `src/panel.c` | The status panels: scores, energy and rocket bars, spare copters |
@@ -24,6 +25,7 @@ in the git history up to commit 86dd7cd.
 | `src/window.c` | Framed windows that save what they cover (the end of a game) |
 | `src/sprites.bin` | Sprite blocks $10-$32, placed at $4400 |
 | `src/charset.bin` | The character set, placed at $7800 |
+| `src/gory_ghost.sid` | The title music, "Gory Ghost (preview)" (PSID, author unknown, 1993); its tune is placed at $5400 |
 | `src/playfield_chars.bin` | The playfield's 1000 screen codes |
 | `src/playfield_colours.bin` | The playfield's 1000 colours |
 | `playfield.ctm` | The playfield as a CharPad project, for editing |
@@ -48,12 +50,14 @@ end of the set and colour the copy.
 
 | Range | What |
 |---|---|
+| $ae/$af, $0334-$03ff | The title music's pointer and variables |
 | $0801-$0900 | oscar64 startup |
 | $0a00-$4000 | Code, data, variables, stack |
 | $4000-$43ff | Screen (VIC bank 1: `$dd00` = 2, `$d018` = 15) |
 | $43f8 | Sprite pointers: 0 yellow copter, 1 red copter, 2 yellow rocket, 3 red rocket, 4 explosion |
 | $4049, $4251 | Player scores as 5 screen digits |
 | $4400-$4cc0 | Sprites: $10-$1f copter (two rotor frames x 8 headings), $20 rocket, $21-$2a explosion, $2b-$32 title |
+| $5400-$5b82 | Title music: init $5400 (A = 0), play $5403 |
 | $7800-$7fff | Character set |
 
 ## The round (`game.c`)
@@ -67,12 +71,12 @@ end of the set and colour the copy.
 - Copter sprite blocks $10-$1f are 8 headings in two rotor frames (bit 3). With bit 3 set: $18 flying left, $19
   level left, $1a-$1d turning through the front (no firing), $1e level right, $1f flying right.
 - Status bars are screen characters: energy and rockets go from $23 (full) to $27 (empty); copter icons are $5b, a lost one $3d.
-- Sprite 4 is the explosion (multicolour, colour 8, frames $21-$2a, 9 passes each). Its sound is the noise on voice 1:
-  each explosion turns the gate off and on to start it over, the end of the explosion turns it off.
+- Sprite 4 is the explosion (multicolour, colour 8, frames $21-$2a, 9 passes each). A crashing copter or a rocket
+  hitting the background moves it there and starts it over; there is one, so a new explosion cuts the running one
+  short. It is only drawn: its collisions are ignored. Its sound is the noise on voice 1: each explosion turns the
+  gate off and on to start it over, the end of the explosion turns it off.
 - Firing a rocket starts a whoosh on voice 2 (new, the original was silent): noise falling from $3000 to $0800 in
-  $0200 steps per pass, decay 300 ms. A
-  crashing copter or a rocket hitting the background moves it there and starts it over; there is one, so a new
-  explosion cuts the running one short. It is only drawn: its collisions are ignored.
+  $0200 steps per pass, decay 300 ms.
 - A crash stops the copter and explodes it at its place (the copter stays visible), and the other player gets 100
   points; 19 explosion frames (171 passes) later a copter is lost. The original turned the copter sprite itself into the explosion.
 - A rocket hitting the background explodes, unless its bonus cell holds a bonus; the player can fire again right
@@ -86,6 +90,13 @@ end of the set and colour the copy.
   original gave 3 rockets and 5 energy.
 - Copters stop sinking and moving down at y = $e8. A rocket picks up the bonus one row down and two columns right of
   its top left corner.
+
+## Title music (`music.c`)
+
+New: the original's title was silent. `title` starts the tune, which plays until a key or button is pressed; then
+`music_stop` gives the IRQ back to the KERNAL and `sound_setup` resets the SID for the game. The tune is meant for 50
+Hz, so a raster IRQ (line 250) calls play; the KERNAL's CIA IRQ (60 Hz) still runs for the keyboard scan, so the
+IRQ routine checks `$d019` to tell them apart. Measured in VICE: 50 play calls in 60 jiffies.
 
 ## Timing
 

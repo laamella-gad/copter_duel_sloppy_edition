@@ -5,7 +5,7 @@ PUCRUNCH ?= pucrunch
 all: build/copterduel_crunched.prg
 
 # src/main.c includes the other sources
-build/copterduel.prg: src/*.c src/*.h src/*.bin
+build/copterduel.prg: src/*.c src/*.h src/*.bin src/*.sid
 	mkdir -p build
 	$(OSCAR64) -n -O2 -o=$@ src/main.c
 

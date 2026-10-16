@@ -1,6 +1,7 @@
 #include "title.h"
 #include "system.h"
 #include "sound.h"
+#include "music.h"
 #include <c64/vic.h>
 
 // Sprite blocks $2b-$32: the title's letters
@@ -30,7 +31,7 @@ void title(void)
 	vic.ctrl2 = 200;
 	vic.color_back = BLACK;
 	vic.color_border = BLACK;
-	sound_setup();
+	music_start();
 
 	// The title in sprites: six letters in a row, two below
 	vic.spr_multi = 255;
@@ -60,4 +61,6 @@ void title(void)
 
 	while (!key_or_button())
 		;
+	music_stop();
+	sound_setup();
 }
