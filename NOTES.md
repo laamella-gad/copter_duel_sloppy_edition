@@ -66,7 +66,10 @@ end of the set and colour the copy.
 - Every 250 passes a player gets 1 point and loses a unit of energy; out of energy is a crash.
 - Each pass touching the background costs a unit of energy (a bar character holds 4, a full bar 28). The original
   crashed the copter after 2 passes of touching.
-- Rockets pick up bonuses: $3a 10 points, $3b 3 rockets, $3c 5 energy.
+- A rocket hitting the other copter is gone and takes 9 units of energy (a third of a full bar); out of energy is
+  a crash. In the original the hit crashed the copter and the rocket flew on.
+- Rockets pick up bonuses: $3a 10 points, $3b 14 rockets (half a bar), $3c 10 energy (just over a rocket hit). The
+  original gave 3 rockets and 5 energy.
 - Copters stop sinking and moving down at y = $e8. A rocket picks up the bonus one row down and two columns right of
   its top left corner.
 

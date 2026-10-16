@@ -17,7 +17,7 @@
 #define ICON_LOST       0x3d
 #define BLANK           0x20
 
-// Bonuses: 10 points, 3 rockets, 5 energy
+// Bonuses: 10 points, 14 rockets (half a bar), 10 energy (just over a rocket hit)
 #define BONUS_POINTS    0x3a
 #define BONUS_ROCKETS   0x3b
 #define BONUS_ENERGY    0x3c
@@ -35,6 +35,9 @@
 #define CRASH_STEPS     (EXPLOSION_LAST - EXPLOSION_FIRST + 10)
 
 #define GROUND_Y        0xe8
+
+// Energy units a rocket hit takes: a third of a full bar (7 characters of 4)
+#define ROCKET_DAMAGE   9
 
 // Copter physics: positions and speeds are 8.8 fixed point (the high byte is
 // the sprite's pixel position). Each pass the joystick adds THRUST to the
@@ -377,6 +380,16 @@ static void use_energy(struct Player * p)
 	hit(p);
 }
 
+// The rocket hits the other copter: the rocket is gone and the copter loses
+// a third of its energy, crashing when it runs out
+static void rocket_hit(struct Player * p, struct Player * target)
+{
+	vic.spr_enable &= ~(4 << p->sprite);
+	p->rocket = 0;
+	for (char i = 0; i < ROCKET_DAMAGE && !target->exploding; i++)
+		use_energy(target);
+}
+
 // Every 250 frames: 1 point and a unit of energy less
 static void tick(struct Player * p)
 {
@@ -431,7 +444,7 @@ static void rocket_wall(struct Player * p, bool touching)
 }
 
 // Rockets explode on walls, copters lose energy on walls and crash on each
-// other, rockets hit copters
+// other, rockets hit copters and take energy
 static void collisions(void)
 {
 	rocket_wall(&yellow, background_collisions & 0x04);
@@ -458,26 +471,26 @@ static void collisions(void)
 	}
 
 	// The red rocket hits yellow
-	if ((sprite_collisions & 0x09) == 0x09 && !yellow.exploding)
+	if ((sprite_collisions & 0x09) == 0x09 && red.rocket && !yellow.exploding)
 	{
 		t = vic.spr_pos[0].x - 0x10;
 		if (t < vic.spr_pos[3].x && (char)(vic.spr_pos[3].x - t) < 0x20)
 		{
 			t = vic.spr_pos[0].y - 0x06;
 			if (t < vic.spr_pos[3].y && (char)(vic.spr_pos[3].y - t) < 0x0c)
-				hit(&yellow);
+				rocket_hit(&red, &yellow);
 		}
 	}
 
 	// The yellow rocket hits red
-	if ((sprite_collisions & 0x06) == 0x06 && !red.exploding)
+	if ((sprite_collisions & 0x06) == 0x06 && yellow.rocket && !red.exploding)
 	{
 		t = vic.spr_pos[1].x - 0x10;
 		if (t < vic.spr_pos[2].x && (char)(vic.spr_pos[2].x - t) < 0x20)
 		{
 			t = vic.spr_pos[1].y - 0x06;
 			if (t < vic.spr_pos[2].y && (char)(vic.spr_pos[2].y - t) < 0x0c)
-				hit(&red);
+				rocket_hit(&yellow, &red);
 		}
 	}
 }
@@ -516,11 +529,11 @@ static void rocket_bonus(struct Player * p)
 		break;
 	case BONUS_ROCKETS:
 		*cell = BLANK;
-		refill(p->rocket_bar, 3);
+		refill(p->rocket_bar, 14);
 		break;
 	case BONUS_ENERGY:
 		*cell = BLANK;
-		refill(p->energy_bar, 5);
+		refill(p->energy_bar, 10);
 		break;
 	}
 }
