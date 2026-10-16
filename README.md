@@ -3,7 +3,7 @@
 A two-player helicopter duel for the Commodore 64: yellow (joystick in port 2) and red (port 1) fight it out with
 rockets in a cave.
 
-[Download copterduel.prg](copterduel.prg)
+[Download copterduel.prg](https://github.com/laamella-gad/copter_duel_sloppy_edition/raw/refs/heads/master/copterduel.prg)
 
 | | |
 |---|---|
