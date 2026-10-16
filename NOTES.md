@@ -42,7 +42,7 @@ end of the set and colour the copy.
 | $0801-$0900 | oscar64 startup |
 | $0a00-$4000 | Code, data, variables, stack |
 | $4000-$43ff | Screen (VIC bank 1: `$dd00` = 2, `$d018` = 15) |
-| $43f8 | Sprite pointers: 0 yellow copter, 1 red copter, 2 yellow rocket, 3 red rocket |
+| $43f8 | Sprite pointers: 0 yellow copter, 1 red copter, 2 yellow rocket, 3 red rocket, 4 explosion |
 | $4049, $4251 | Player scores as 5 screen digits |
 | $4400-$4cc0 | Sprites: $10-$1f copter (two rotor frames x 8 headings), $20 rocket, $21-$2a explosion, $2b-$32 title |
 | $7800-$7fff | Character set |
@@ -52,10 +52,16 @@ end of the set and colour the copy.
 - `play_round` points the IRQ at `irq_rotor_animation` and clears the state; the loop runs until `game_over_flags`
   is set and both explosions are over. Bit 0 = yellow has no copters left (red wins), bit 1 = red.
 - The rotor IRQ toggles the copters' rotor frame (bit 3 of the sprite pointer) every other IRQ, then chains to the KERNAL at $ea31.
-- Yellow is the joystick in port 2 (`$dc00`), red the one in port 1 (`$dc01`). Each pass: `gravity`, `control`,
-  `rocket_move`, `tick`, `collisions`, `rocket_bonus`, and every other pass `place_bonuses`.
+- Yellow is the joystick in port 2 (`$dc00`), red the one in port 1 (`$dc01`). Each pass: `explosion`, `gravity`,
+  `control`, `rocket_move`, `tick`, `collisions`, `rocket_bonus`, and every other pass `place_bonuses`.
 - Status bars are screen characters: energy and rockets go from $23 (full) to $27 (empty); copter icons are $5b, a lost one $3d.
-- A hit runs the explosion; afterwards a copter is lost, and the other player gets 100 points.
+- Sprite 4 is the explosion (multicolour, colour 8, frames $21-$2a, 9 passes each, with the noise on voice 1). A
+  crashing copter or a rocket hitting the background moves it there and starts it over; there is one, so a new
+  explosion cuts the running one short. It is only drawn: its collisions are ignored.
+- A hit stops the copter and explodes it at its place (the copter stays visible); 19 explosion steps (171 passes) later a copter is lost, and the other
+  player gets 100 points. The original turned the copter sprite itself into the explosion.
+- A rocket hitting the background explodes, unless its bonus cell holds a bonus; the player can fire again right
+  away. The original's rocket just vanished.
 - Every 250 passes a player gets 1 point and loses a unit of energy; out of energy is a crash.
 - Each pass touching the background costs a unit of energy (a bar character holds 4, a full bar 28). The original
   crashed the copter after 2 passes of touching.

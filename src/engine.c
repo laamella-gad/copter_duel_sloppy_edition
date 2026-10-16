@@ -1,6 +1,7 @@
 // The round: a port of the machine code engine at $8000 (sys32768 in the original).
 // Yellow is sprite 0 with its rocket in sprite 2, joystick port 2;
 // red is sprite 1 with its rocket in sprite 3, joystick port 1.
+// Sprite 4 is the explosion, of copters and of rockets on the background.
 #include "engine.h"
 #include <c64/vic.h>
 #include <c64/cia.h>
@@ -27,6 +28,11 @@
 #define COPTER_LEFT     0x1f
 #define EXPLOSION_FIRST 0x21
 #define EXPLOSION_LAST  0x2a
+
+#define EXPLOSION_SPRITE    4
+// A copter comes back this many explosion steps after its crash: the
+// explosion's frames, then 10 more
+#define CRASH_STEPS     (EXPLOSION_LAST - EXPLOSION_FIRST + 10)
 
 #define GROUND_Y        0xe8
 
@@ -77,6 +83,7 @@ static char sprite_collisions, background_collisions;
 static char gravity_delay;
 static char odd_frame;
 static char bonus_delay, bonuses_placed;
+static char blast_delay;
 static char bonus_offsets[4];
 
 static const char bonus_chars[4] = {BONUS_POINTS, BONUS_ROCKETS, BONUS_POINTS, BONUS_ENERGY};
@@ -147,8 +154,38 @@ static void score_add(volatile char * score, signed char x)
 	}
 }
 
-// Starts or steps the explosion; after it a copter is lost and the copter
-// is reset, or, without copters left, the player is out
+// Moves the explosion sprite to a sprite position and starts it over
+static void explode(char x, char y)
+{
+	vic.spr_pos[EXPLOSION_SPRITE].x = x;
+	vic.spr_pos[EXPLOSION_SPRITE].y = y;
+	sprite_pointers[EXPLOSION_SPRITE] = EXPLOSION_FIRST;
+	vic.spr_enable |= 1 << EXPLOSION_SPRITE;
+	blast_delay = 8;
+	sid.voices[1].ctrl = SID_CTRL_NOISE | SID_CTRL_GATE;
+	sid.voices[1].ctrl = SID_CTRL_NOISE;
+}
+
+// Every 9 passes the explosion's next frame; after the last it is gone
+static void explosion(void)
+{
+	if (!(vic.spr_enable & (1 << EXPLOSION_SPRITE)))
+		return;
+	if (blast_delay)
+	{
+		blast_delay--;
+		return;
+	}
+	blast_delay = 8;
+	if (sprite_pointers[EXPLOSION_SPRITE] < EXPLOSION_LAST)
+		sprite_pointers[EXPLOSION_SPRITE]++;
+	else
+		vic.spr_enable &= ~(1 << EXPLOSION_SPRITE);
+}
+
+// Crashes the copter: it explodes and stops. Later calls step the crash;
+// after it a copter is lost and the copter is reset, or, without copters
+// left, the player is out
 static void hit(struct Player * p)
 {
 	char s = p->sprite;
@@ -163,23 +200,14 @@ static void hit(struct Player * p)
 	if (!p->exploding)
 	{
 		p->exploding++;
-		vic.spr_multi |= 1 << s;
-		sprite_pointers[s] = EXPLOSION_FIRST;
-		sid.voices[1].ctrl = SID_CTRL_NOISE | SID_CTRL_GATE;
-		sid.voices[1].ctrl = SID_CTRL_NOISE;
-		vic.spr_color[s] = 8;
+		explode(vic.spr_pos[s].x, vic.spr_pos[s].y);
 		p->explosion_step = 0;
 		p->dx = p->dy = 0;
 		score_add(p->other_score, 2);
 		return;
 	}
 
-	if (sprite_pointers[s] < EXPLOSION_LAST)
-	{
-		sprite_pointers[s]++;
-		return;
-	}
-	if (++p->explosion_step < 10)
+	if (++p->explosion_step < CRASH_STEPS)
 		return;
 
 	p->exploding--;
@@ -201,11 +229,9 @@ static void hit(struct Player * p)
 		p->energy_bar[i] = BAR_FULL;
 		p->rocket_bar[i] = BAR_FULL;
 	}
-	vic.spr_multi &= ~(1 << s);
 	p->x = p->home_x << 8;
 	p->y = 0xe4 << 8;
 	place(p);
-	vic.spr_color[s] = p->colour;
 	sprite_pointers[s] = p->home_pointer;
 	vic.spr_backcol = 0;
 }
@@ -366,20 +392,45 @@ static void wall(struct Player * p, bool touching)
 		use_energy(p);
 }
 
-// Rockets end at walls, copters lose energy on walls and crash on each
+// The screen cell the rocket picks bonuses up from: one row down and two
+// columns right of its top left corner; none off the screen
+static volatile char * rocket_cell(struct Player * p)
+{
+	char s = p->sprite + 2;
+	char column = (char)(vic.spr_pos[s].x - 0x1a) >> 3;
+	char row = (char)(vic.spr_pos[s].y - 0x30) >> 3;
+	if (row >= 24 || column >= 38)
+		return nullptr;
+	return (volatile char *)((screen_rows[25 + row] << 8 | screen_rows[row]) + column + 0x2a);
+}
+
+static bool is_bonus(char c)
+{
+	return c == BONUS_POINTS || c == BONUS_ROCKETS || c == BONUS_ENERGY;
+}
+
+// A rocket on the background explodes, unless it is over a bonus (which
+// it picks up)
+static void rocket_wall(struct Player * p, bool touching)
+{
+	if (!p->rocket || !touching)
+		return;
+	volatile char * cell = rocket_cell(p);
+	if (cell && is_bonus(*cell))
+		return;
+
+	char s = p->sprite + 2;
+	vic.spr_enable &= ~(1 << s);
+	p->rocket = 0;
+	explode(vic.spr_pos[s].x, vic.spr_pos[s].y);
+}
+
+// Rockets explode on walls, copters lose energy on walls and crash on each
 // other, rockets hit copters
 static void collisions(void)
 {
-	if (yellow.rocket && (background_collisions & 0x04))
-	{
-		vic.spr_enable &= 0xfb;
-		yellow.rocket = 0;
-	}
-	if (red.rocket && (background_collisions & 0x08))
-	{
-		vic.spr_enable &= 0xf7;
-		red.rocket = 0;
-	}
+	rocket_wall(&yellow, background_collisions & 0x04);
+	rocket_wall(&red, background_collisions & 0x08);
 
 	wall(&yellow, background_collisions & 0x01);
 	wall(&red, background_collisions & 0x02);
@@ -387,8 +438,7 @@ static void collisions(void)
 	char t;
 
 	// The copters collide (neither exploding)
-	if ((sprite_collisions & 0x03) == 0x03 &&
-		sprite_pointers[0] < 0x20 && sprite_pointers[1] < 0x20)
+	if ((sprite_collisions & 0x03) == 0x03 && !yellow.exploding && !red.exploding)
 	{
 		t = vic.spr_pos[0].x - 0x18;
 		if (t < vic.spr_pos[1].x && (char)(vic.spr_pos[1].x - t) < 0x30)
@@ -403,7 +453,7 @@ static void collisions(void)
 	}
 
 	// The red rocket hits yellow
-	if ((sprite_collisions & 0x09) == 0x09)
+	if ((sprite_collisions & 0x09) == 0x09 && !yellow.exploding)
 	{
 		t = vic.spr_pos[0].x - 0x10;
 		if (t < vic.spr_pos[3].x && (char)(vic.spr_pos[3].x - t) < 0x20)
@@ -415,7 +465,7 @@ static void collisions(void)
 	}
 
 	// The yellow rocket hits red
-	if ((sprite_collisions & 0x06) == 0x06)
+	if ((sprite_collisions & 0x06) == 0x06 && !red.exploding)
 	{
 		t = vic.spr_pos[1].x - 0x10;
 		if (t < vic.spr_pos[2].x && (char)(vic.spr_pos[2].x - t) < 0x20)
@@ -446,17 +496,12 @@ static void refill(volatile char * bar, char n)
 // The rocket picks up the bonus it flies over
 static void rocket_bonus(struct Player * p)
 {
-	char s = p->sprite + 2;
-
 	if (!p->rocket)
 		return;
 
-	char column = (char)(vic.spr_pos[s].x - 0x1a) >> 3;
-	char row = (char)(vic.spr_pos[s].y - 0x30) >> 3;
-	// The cell is one row down and two columns right; none off the screen
-	if (row >= 24 || column >= 38)
+	volatile char * cell = rocket_cell(p);
+	if (!cell)
 		return;
-	volatile char * cell = (volatile char *)((screen_rows[25 + row] << 8 | screen_rows[row]) + column + 0x2a);
 
 	switch (*cell)
 	{
@@ -516,6 +561,7 @@ void play_round(void)
 	yellow.explosion_delay = red.explosion_delay = 0;
 	bonus_delay = 0;
 	bonuses_placed = 0;
+	blast_delay = 0;
 	odd_frame = 0;
 	yellow.x = vic.spr_pos[0].x << 8;
 	yellow.y = vic.spr_pos[0].y << 8;
@@ -535,6 +581,7 @@ void play_round(void)
 		while (!(cia2.icr & 0x01))
 			;
 
+		explosion();
 		gravity();
 		control(&yellow);
 		control(&red);
