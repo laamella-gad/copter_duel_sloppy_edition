@@ -103,6 +103,7 @@ end of the set and colour the copy.
 New: the original's title letters stood still. While the title waits, "copter" (sprites 0-5) waves up and down
 around y = 80, 0-16 pixels from y = 72 out of a 256 byte sine table in `title.c`; each letter is 32 entries further on
 and the wave moves 4 entries a frame (`vic_waitFrame`).
+Row 15 adds "slopped by claude and laamella gad" in grey (new).
 
 ## Title music (`music.c`)
 

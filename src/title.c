@@ -84,6 +84,7 @@ void title(void)
 	put_text(13, 10, LIGHT_BLUE, s" 1987 by ronald mayer");
 	screen[13 * 40 + 9] = 0;
 	colour_ram[13 * 40 + 9] = LIGHT_BLUE;
+	put_text(15, 3, GREY, s"slopped by claude and laamella gad");
 	put_text(18, 4, GREEN, s"press any key or button to start");
 
 	char wave = 0;

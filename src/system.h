@@ -14,6 +14,7 @@
 #define GREEN       5
 #define YELLOW      7
 #define ORANGE      8
+#define GREY        12
 #define LIGHT_BLUE  14
 
 // Joystick bits, 0 when pressed
