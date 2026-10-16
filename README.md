@@ -40,6 +40,7 @@ history up to commit 86dd7cd. `NOTES.md` has the details.
 - The winner is decided right: the original read the end flag from the wrong address and always picked the player
   with the most points, even after a knockout.
 - The copters have momentum instead of moving at a fixed speed.
+- The playfield has been opened up a bit, it was too easy to crash.
 - Touching the cave walls drains energy instead of crashing the copter at once.
 - A rocket hit takes a third of the energy instead of crashing the copter, and the bonuses give more rockets and energy.
 - Bonuses are easier to shoot: a rocket that overlaps one picks it up, with a little to spare.
