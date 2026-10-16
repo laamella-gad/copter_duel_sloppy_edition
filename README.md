@@ -5,6 +5,29 @@ rockets in a cave.
 
 [Download copterduel.prg](copterduel.prg)
 
+| | |
+|---|---|
+| ![Title screen](screenshots/title.png) | ![Start of a round](screenshots/start.png) |
+| The title screen, with music and waving letters. | The start of a round: both copters on the ground. |
+| ![Mid-round](screenshots/duel.png) | ![Explosion](screenshots/crash.png) |
+| Yellow has lost a copter, red is low on energy. | An explosion against the cave wall. |
+
+## Bonuses
+
+Shoot a bonus with a rocket to pick it up. The four bonuses move to new places now and then.
+
+| Letter | Bonus                                      |
+|--------|--------------------------------------------|
+| B      | 10 points (twice as common as the others)  |
+| R      | 14 rockets, half a bar                     |
+| E      | 10 energy, a little more than a rocket hit |
+
+## Winning
+
+The game ends when a player loses their last copter, and the other player wins. Points only count when both lose
+their last copter at the same time: then the most points win. Every crash gives the other player 100 points, whatever
+caused it, and each player slowly earns points over time.
+
 ## The original
 
 "Copter Duel" was written in 1987 by Ronald Mayer and published as "mr-soft": a BASIC program with a
