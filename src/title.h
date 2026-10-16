@@ -1,0 +1,13 @@
+// The screens before a game
+#ifndef TITLE_H
+#define TITLE_H
+
+// "mr-soft presents" fading in and out, once at the start
+void presents(void);
+
+// The title, until a key or button is pressed
+void title(void);
+
+#pragma compile("title.c")
+
+#endif

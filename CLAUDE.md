@@ -20,6 +20,6 @@ tools/test_end.py build/copterduel.prg 01 /tmp/somewhere
 
 ## Architecture
 
-`src/copterduel.c` is the original's BASIC program and includes `engine.c` (the machine code round) and `window.c` (screen windows) through `#pragma compile` in their headers. Keep it a faithful port: same screens, same timing; fixes of the original's bugs are listed in NOTES.md. Code and data live at $0a00-$4000 because VIC bank 1 ($4000-$7fff) holds the screen, the sprites (`src/sprites.bin` at $4400) and the character set (`src/charset.bin` at $7800), placed with `#pragma region` and `#embed`.
+`src/main.c` pulls in the other sources through `#pragma compile` in their headers; the files follow the game's parts (title, game, playfield, panel, player, copter, rocket, explosion, sound, window), listed in NOTES.md. Screens and timing follow the original; NOTES.md lists every difference (fixed bugs and gameplay changes). Code and data live at $0a00-$4000 because VIC bank 1 ($4000-$7fff) holds the screen, the sprites (`src/sprites.bin` at $4400) and the character set (`src/charset.bin` at $7800), placed with `#pragma region` and `#embed`.
 
 Test in VICE through its remote monitor (see `tools/test_end.py`, which finds addresses in the oscar64 listings).

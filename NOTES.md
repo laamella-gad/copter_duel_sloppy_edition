@@ -1,18 +1,27 @@
 # Copter Duel notes
 
-"Copter Duel", (c) 1987 Ronald Mayer (Austria), published as "mr-soft presents": a two-player helicopter duel
-for the C64. This project is the game rewritten in C for oscar64. The original was a BASIC program plus a machine
-code engine; it was disassembled from a cracked tape image first. That work (the T64, VICE snapshots, the Deflower
-annotations `copterduel.flo`, the BASIC listing, and the byte-patch build) is in the git history up to commit
-86dd7cd.
+"Copter Duel", (c) 1987 Ronald Mayer (Austria), published as "mr-soft presents": a two-player helicopter duel for the
+C64. This project is the game rewritten in C for oscar64. The original was a BASIC program plus a machine code engine
+(the round, at $8000) and window routines (at $8800); it was disassembled from a cracked tape image first. That work
+(the T64, VICE snapshots, the Deflower annotations `copterduel.flo`, the BASIC listing, and the byte-patch build) is
+in the git history up to commit 86dd7cd.
 
 ## Files
 
 | File | What |
 |---|---|
-| `src/copterduel.c` | The original's BASIC program: title, playfield, end of round (comments give the BASIC line numbers) |
-| `src/engine.c` | The original's machine code engine at $8000 (`sys32768`): one round |
-| `src/window.c` | The original's window routines at $8800/$8803 (`sysws`/`syswc`) |
+| `src/main.c` | Start: memory layout, graphics, VIC setup, then title and game in turn |
+| `src/system.c` | Screen addresses, colours, joystick bits; text output, jiffy waits, key or button |
+| `src/sound.c` | The SID: the copters' drone (voice 0) and the explosion noise (voice 1) |
+| `src/title.c` | "mr-soft presents" and the title screen |
+| `src/game.c` | One game: playfield and sprites set up, the round loop, the winner |
+| `src/playfield.c` | Drawing the playfield; placing the bonuses |
+| `src/panel.c` | The status panels: scores, energy and rocket bars, spare copters |
+| `src/player.c` | The players' state; energy use and the points over time |
+| `src/copter.c` | Flying, gravity, the rotor IRQ, crashes, copter collisions |
+| `src/rocket.c` | Firing, flying, hitting the background or the other copter, picking up bonuses |
+| `src/explosion.c` | The explosion sprite |
+| `src/window.c` | Framed windows that save what they cover (the end of a game) |
 | `src/sprites.bin` | Sprite blocks $10-$32, placed at $4400 |
 | `src/charset.bin` | The character set, placed at $7800 |
 | `src/playfield_chars.bin` | The playfield's 1000 screen codes |
@@ -47,20 +56,23 @@ end of the set and colour the copy.
 | $4400-$4cc0 | Sprites: $10-$1f copter (two rotor frames x 8 headings), $20 rocket, $21-$2a explosion, $2b-$32 title |
 | $7800-$7fff | Character set |
 
-## The round (`engine.c`)
+## The round (`game.c`)
 
-- `play_round` points the IRQ at `irq_rotor_animation` and clears the state; the loop runs until `game_over_flags`
-  is set and both explosions are over. Bit 0 = yellow has no copters left (red wins), bit 1 = red.
+- `play_round` points the IRQ at `rotor_irq` and clears the state; the loop runs until `game_over_flags`
+  is set and both crashes are over. Bit 0 = yellow has no copters left (red wins), bit 1 = red.
 - The rotor IRQ toggles the copters' rotor frame (bit 3 of the sprite pointer) every other IRQ, then chains to the KERNAL at $ea31.
-- Yellow is the joystick in port 2 (`$dc00`), red the one in port 1 (`$dc01`). Each pass: `explosion`, `gravity`,
-  `control`, `rocket_move`, `tick`, `collisions`, `rocket_bonus`, and every other pass `place_bonuses`.
+- Yellow is the joystick in port 2 (`$dc00`), red the one in port 1 (`$dc01`). Each pass: `explosion_update`,
+  `copters_gravity`, `copter_control`, `rocket_move`, `player_tick`, `collisions`, `rocket_bonus`, `bonuses_update`
+  (which acts every other pass). Within a step yellow goes first.
+- Copter sprite blocks $10-$1f are 8 headings in two rotor frames (bit 3). With bit 3 set: $18 flying left, $19
+  level left, $1a-$1d turning through the front (no firing), $1e level right, $1f flying right.
 - Status bars are screen characters: energy and rockets go from $23 (full) to $27 (empty); copter icons are $5b, a lost one $3d.
 - Sprite 4 is the explosion (multicolour, colour 8, frames $21-$2a, 9 passes each). Its sound is the noise on voice 1:
   each explosion turns the gate off and on to start it over, the end of the explosion turns it off. A
   crashing copter or a rocket hitting the background moves it there and starts it over; there is one, so a new
   explosion cuts the running one short. It is only drawn: its collisions are ignored.
-- A hit stops the copter and explodes it at its place (the copter stays visible); 19 explosion steps (171 passes) later a copter is lost, and the other
-  player gets 100 points. The original turned the copter sprite itself into the explosion.
+- A crash stops the copter and explodes it at its place (the copter stays visible), and the other player gets 100
+  points; 19 explosion frames (171 passes) later a copter is lost. The original turned the copter sprite itself into the explosion.
 - A rocket hitting the background explodes, unless its bonus cell holds a bonus; the player can fire again right
   away. The original's rocket just vanished.
 - Every 250 passes a player gets 1 point and loses a unit of energy; out of energy is a crash.
@@ -82,7 +94,7 @@ end of the set and colour the copy.
 
 ## Text output
 
-The original printed everything through the KERNAL. `copterduel.c` writes to the screen directly instead: texts are
+The original printed everything through the KERNAL. The C version writes to the screen directly instead: texts are
 screen code literals (`s"..."`) put at the row and column the original's cursor moves reached, the playfield is
 `playfield_chars.bin` and `playfield_colours.bin` copied to the screen and colour RAM. Like the KERNAL's clear, `clear_screen` fills the colour RAM with
 the colour of the last text. `@` (the copyright sign in this character set) is screen code 0, so it can't be in a
