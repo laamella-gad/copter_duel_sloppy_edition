@@ -96,6 +96,12 @@ end of the set and colour the copy.
 - Copters stop sinking and moving down at y = $e8. A rocket picks up the bonus one row down and two columns right of
   its top left corner.
 
+## Title wave
+
+New: the original's title letters stood still. While the title waits, "copter" (sprites 0-5) waves up and down
+around y = 80, 0-16 pixels from y = 72 out of a 256 byte sine table in `title.c`; each letter is 32 entries further on
+and the wave moves 4 entries a frame (`vic_waitFrame`).
+
 ## Title music (`music.c`)
 
 New: the original's title was silent. `title` starts the tune, which plays until a key or button is pressed; then

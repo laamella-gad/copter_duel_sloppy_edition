@@ -7,6 +7,33 @@
 // Sprite blocks $2b-$32: the title's letters
 #define TITLE_SPRITES   0x2b
 
+// "copter" (sprites 0-5) waves up and down around y = 80: each letter is
+// WAVE_SPREAD entries further on in the sine table, which moves WAVE_SPEED
+// entries a frame
+#define WAVE_TOP        72
+#define WAVE_SPREAD     32
+#define WAVE_SPEED      4
+
+// The title letters' wave: 8 + 8 * sin(2 * pi * i / 256), rounded
+static const char sine[256] = {
+	 8,  8,  8,  9,  9,  9,  9,  9, 10, 10, 10, 10, 10, 11, 11, 11,
+	11, 11, 11, 12, 12, 12, 12, 12, 12, 13, 13, 13, 13, 13, 13, 14,
+	14, 14, 14, 14, 14, 14, 14, 15, 15, 15, 15, 15, 15, 15, 15, 15,
+	15, 15, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
+	16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 15,
+	15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 14, 14, 14, 14, 14, 14,
+	14, 14, 13, 13, 13, 13, 13, 13, 12, 12, 12, 12, 12, 12, 11, 11,
+	11, 11, 11, 11, 10, 10, 10, 10, 10,  9,  9,  9,  9,  9,  8,  8,
+	 8,  8,  8,  7,  7,  7,  7,  7,  6,  6,  6,  6,  6,  5,  5,  5,
+	 5,  5,  5,  4,  4,  4,  4,  4,  4,  3,  3,  3,  3,  3,  3,  2,
+	 2,  2,  2,  2,  2,  2,  2,  1,  1,  1,  1,  1,  1,  1,  1,  1,
+	 1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+	 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,
+	 1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,
+	 2,  2,  3,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,  4,  5,  5,
+	 5,  5,  5,  5,  6,  6,  6,  6,  6,  7,  7,  7,  7,  7,  8,  8
+};
+
 static const char fade[7] = {11, 12, 15, 1, 15, 12, 11};
 
 void mr_soft_presents(void)
@@ -59,8 +86,14 @@ void title(void)
 	colour_ram[13 * 40 + 9] = LIGHT_BLUE;
 	put_text(18, 4, GREEN, s"press any key or button to start");
 
+	char wave = 0;
 	while (!key_or_button())
-		;
+	{
+		vic_waitFrame();
+		for (char i = 0; i <= 5; i++)
+			vic.spr_pos[i].y = WAVE_TOP + sine[(char)(wave + i * WAVE_SPREAD)];
+		wave += WAVE_SPEED;
+	}
 	music_stop();
 	sound_setup();
 }

@@ -5,7 +5,7 @@
 // "mr-soft presents" fading in and out, once at the start
 void mr_soft_presents(void);
 
-// The title with its music, until a key or button is pressed
+// The title with its music and "copter" waving, until a key or button is pressed
 void title(void);
 
 #pragma compile("title.c")
