@@ -54,7 +54,6 @@ struct Player
 
 	char                turn_delay;     // frames until the next turn step
 	char                rocket;         // 0 none, 1 flying right, 2 flying left
-	char                wall_frames;    // frames in a row touching the background
 	char                exploding;
 	char                explosion_delay;
 	char                explosion_step;
@@ -333,17 +332,9 @@ static void rocket_move(struct Player * p)
 		vic.spr_pos[s].x += 2;
 }
 
-// Every 250 frames: 1 point and a unit of energy less; out of energy is a crash
-static void tick(struct Player * p)
+// Takes a unit of energy, from the right; out of energy is a crash
+static void use_energy(struct Player * p)
 {
-	if (p->tick_delay)
-	{
-		p->tick_delay--;
-		return;
-	}
-	p->tick_delay = 250;
-	score_add(p->score, 4);
-
 	for (signed char x = 6; x >= 0; x--)
 	{
 		if (p->energy_bar[x] < BAR_EMPTY)
@@ -355,8 +346,28 @@ static void tick(struct Player * p)
 	hit(p);
 }
 
-// Rockets end at walls, copters crash on walls (2 frames) and on each other,
-// rockets hit copters
+// Every 250 frames: 1 point and a unit of energy less
+static void tick(struct Player * p)
+{
+	if (p->tick_delay)
+	{
+		p->tick_delay--;
+		return;
+	}
+	p->tick_delay = 250;
+	score_add(p->score, 4);
+	use_energy(p);
+}
+
+// Each pass touching the background costs a unit of energy
+static void wall(struct Player * p, bool touching)
+{
+	if (touching && !p->exploding)
+		use_energy(p);
+}
+
+// Rockets end at walls, copters lose energy on walls and crash on each
+// other, rockets hit copters
 static void collisions(void)
 {
 	if (yellow.rocket && (background_collisions & 0x04))
@@ -370,20 +381,8 @@ static void collisions(void)
 		red.rocket = 0;
 	}
 
-	if (!(background_collisions & 0x01))
-		yellow.wall_frames = 0;
-	else if (++yellow.wall_frames >= 2)
-	{
-		yellow.wall_frames = 0;
-		hit(&yellow);
-	}
-	if (!(background_collisions & 0x02))
-		red.wall_frames = 0;
-	else if (++red.wall_frames >= 2)
-	{
-		red.wall_frames = 0;
-		hit(&red);
-	}
+	wall(&yellow, background_collisions & 0x01);
+	wall(&red, background_collisions & 0x02);
 
 	char t;
 

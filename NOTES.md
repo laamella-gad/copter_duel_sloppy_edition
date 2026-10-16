@@ -57,6 +57,8 @@ end of the set and colour the copy.
 - Status bars are screen characters: energy and rockets go from $23 (full) to $27 (empty); copter icons are $5b, a lost one $3d.
 - A hit runs the explosion; afterwards a copter is lost, and the other player gets 100 points.
 - Every 250 passes a player gets 1 point and loses a unit of energy; out of energy is a crash.
+- Each pass touching the background costs a unit of energy (a bar character holds 4, a full bar 28). The original
+  crashed the copter after 2 passes of touching.
 - Rockets pick up bonuses: $3a 10 points, $3b 3 rockets, $3c 5 energy.
 - Copters stop sinking and moving down at y = $e8. A rocket picks up the bonus one row down and two columns right of
   its top left corner.
