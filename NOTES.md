@@ -97,6 +97,9 @@ end of the set and colour the copy.
 - Rockets pick up bonuses: $3a 10 points, $3b 14 rockets (half a bar), $3c 10 energy (just over a rocket hit). The
   original gave 3 rockets and 5 energy.
 - Copters stop sinking and moving down at y = $e8.
+- The cave is opened up, edited in CharPad when the playfield was split (commit 30d76b9): 71 cells differ from the
+  original, mostly rock taken away (the left ledge at rows 9-13, small rocks, a gap at the right wall at rows 16-18)
+  and a few rock edges redrawn around it.
 - A rocket picks up a bonus in the cell two columns right of its top left corner, at sprite row 6 or 12: the rocket is
   drawn in rows 8-10, so the bonus counts while any part of the rocket overlaps it, with 2 pixels to spare on each
   side (a 14 pixel window). The original only looked at the cell holding sprite row 10, the rocket's bottom row: an
