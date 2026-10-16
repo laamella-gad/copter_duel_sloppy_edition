@@ -46,7 +46,7 @@ int main(void)
 	vic.color_back1 = 7;
 	vic.color_back2 = 9;
 
-	presents();
+	mr_soft_presents();
 	for (;;)
 	{
 		title();

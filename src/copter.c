@@ -17,9 +17,14 @@
 #define GROUND_Y        0xe8
 #define HOME_Y          0xe4
 
-// A crashed copter comes back this many explosion frames after its crash:
-// the explosion, then 10 more
-#define CRASH_STEPS     (EXPLOSION_LAST - EXPLOSION_FIRST + 10)
+// A crashed copter explodes for EXPLOSION_STEPS explosion frames, spinning
+// through all its sprite blocks one per pass and through the colours one per
+// frame, then is hidden; it comes back
+// 10 frames later
+#define EXPLOSION_STEPS (EXPLOSION_LAST - EXPLOSION_FIRST)
+#define CRASH_STEPS     (EXPLOSION_STEPS + 10)
+#define COPTER_FIRST    0x10
+#define COPTER_FRAMES   16
 
 // Positions and speeds are 8.8 fixed point (the high byte is the sprite's
 // pixel position). Each pass the joystick adds THRUST to the speed and drag
@@ -28,12 +33,33 @@
 #define THRUST          16
 #define DRAG_SHIFT      4
 
+// The raster IRQ's line: below the playfield, so colours change unseen
+#define EFFECTS_LINE    251
+
 char irq_odd;
 static char gravity_delay;
 
-// Every other IRQ: toggles the copters between rotor frames, then the KERNAL IRQ
-__asm rotor_irq
+// Each frame, from the raster IRQ: exploding copters flash through the colours
+static __interrupt void copters_flash(void)
 {
+	if (yellow.crashed && yellow.crash_step < EXPLOSION_STEPS)
+		vic.spr_color[yellow.sprite]++;
+	if (red.crashed && red.crash_step < EXPLOSION_STEPS)
+		vic.spr_color[red.sprite]++;
+}
+
+// The raster IRQ: the colour effects. The KERNAL's CIA IRQ: every other one
+// toggles the copters between rotor frames, then the KERNAL IRQ.
+__asm round_irq
+{
+	lda $d019
+	and #$01
+	beq rotor_irq
+	sta $d019
+	jsr copters_flash
+	jsr explosion_flash
+	jmp $ea81
+rotor_irq:
 	lda irq_odd
 	eor #$01
 	sta irq_odd
@@ -57,10 +83,20 @@ rotor_done:
 void copters_start(void)
 {
 	__asm { sei }
-	*(void **)0x0314 = rotor_irq;
+	*(void **)0x0314 = round_irq;
+	vic.raster = EFFECTS_LINE;
+	vic.ctrl1 &= 0x7f;
+	vic.intr_ctrl = 0xff;
+	vic.intr_enable = 1;
 	__asm { cli }
 	irq_odd = 0;
 	gravity_delay = 0;
+}
+
+void copters_stop(void)
+{
+	vic.intr_enable = 0;
+	vic.intr_ctrl = 0xff;
 }
 
 // Moves the copter's sprite to its position
@@ -185,6 +221,9 @@ void copter_crash(struct Player * p)
 {
 	char s = p->sprite;
 
+	if (p->crashed && p->crash_step < EXPLOSION_STEPS)
+		sprite_pointers[s] = COPTER_FIRST + (sprite_pointers[s] + 1) % COPTER_FRAMES;
+
 	if (p->crashed && p->crash_delay)
 	{
 		p->crash_delay--;
@@ -202,13 +241,17 @@ void copter_crash(struct Player * p)
 		return;
 	}
 
-	if (++p->crash_step < CRASH_STEPS)
+	if (++p->crash_step == EXPLOSION_STEPS)
+	{
+		vic.spr_enable &= ~(1 << s);
+		vic.spr_color[s] = p->colour;
+	}
+	if (p->crash_step < CRASH_STEPS)
 		return;
 
 	p->crashed = 0;
 	if (!lose_copter(p->copter_icons))
 	{
-		vic.spr_enable &= ~(1 << s);
 		game_over_flags |= p->lost_flag;
 		return;
 	}
@@ -219,6 +262,7 @@ void copter_crash(struct Player * p)
 	p->y = HOME_Y << 8;
 	place(p);
 	sprite_pointers[s] = p->home_pointer;
+	vic.spr_enable |= 1 << s;
 	vic.spr_backcol = 0;
 }
 

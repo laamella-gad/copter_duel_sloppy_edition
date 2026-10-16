@@ -64,7 +64,9 @@ end of the set and colour the copy.
 
 - `play_round` points the IRQ at `rotor_irq` and clears the state; the loop runs until `game_over_flags`
   is set and both crashes are over. Bit 0 = yellow has no copters left (red wins), bit 1 = red.
-- The rotor IRQ toggles the copters' rotor frame (bit 3 of the sprite pointer) every other IRQ, then chains to the KERNAL at $ea31.
+- The round IRQ (`round_irq`): on the KERNAL's CIA IRQ it toggles the copters' rotor frame (bit 3 of the sprite
+  pointer) every other IRQ, then chains to the KERNAL at $ea31. A raster IRQ at line 251 (below the playfield, new)
+  runs the colour effects once a frame: `copters_flash` and `explosion_flash`.
 - Yellow is the joystick in port 2 (`$dc00`), red the one in port 1 (`$dc01`). Each pass: `explosion_update`,
   `sound_update`, `copters_gravity`, `copter_control`, `rocket_move`, `player_tick`, `collisions`, `rocket_bonus`, `bonuses_update`
   (which acts every other pass). Within a step yellow goes first.
@@ -73,14 +75,15 @@ end of the set and colour the copy.
 - Status bars are screen characters: energy and rockets go from $23 (full) to $27 (empty); copter icons are $5b, a lost one $3d.
 - Sprite 4 is the explosion (multicolour, colour 8, frames $21-$2a, 9 passes each). A crashing copter or a rocket
   hitting the background moves it there and starts it over; there is one, so a new explosion cuts the running one
-  short. It is only drawn: its collisions are ignored. Its sound is the noise on voice 1: each explosion turns the
+  short. It is only drawn: its collisions are ignored. Each explosion flashes the background (not the border)
+  black, white, black for 2 frames each (new). Its sound is the noise on voice 1: each explosion turns the
   gate off and on to start it over, the end of the explosion turns it off.
 - Firing a rocket starts a whoosh on voice 2 (new, the original was silent): noise falling from $3000 to $0800 in
   $0200 steps per pass, decay 300 ms.
 - A copter touching the background buzzes (new): a 70 Hz square wave on voice 2, sustain 10, from the pass after
   the first touch until the pass after the last. The whoosh has voice 2 while it falls; the buzz comes back after it.
-- A crash stops the copter and explodes it at its place (the copter stays visible), and the other player gets 100
-  points; 19 explosion frames (171 passes) later a copter is lost. The original turned the copter sprite itself into the explosion.
+- A crash stops the copter and explodes it at its place (the copter stays visible, spinning through its 16 sprite
+  blocks and flashing through the colours one per frame while the explosion runs, then hidden), and the other player gets 100 points; 19 explosion frames (171 passes) later a copter is lost. The original turned the copter sprite itself into the explosion.
 - A rocket hitting the background explodes, unless its bonus cell holds a bonus; the player can fire again right
   away. The original's rocket just vanished.
 - Every 250 passes a player gets 1 point and loses a unit of energy; out of energy is a crash.

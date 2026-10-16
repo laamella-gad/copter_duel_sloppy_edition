@@ -4,8 +4,12 @@
 
 #include "player.h"
 
-// The start of a round: the rotor animation runs in the IRQ
+// The start of a round: the rotor animation runs in the KERNAL's IRQ, the
+// colour effects of explosions in a raster IRQ
 void copters_start(void);
+
+// The end of a round: the raster IRQ stops, the rotor animation goes on
+void copters_stop(void);
 
 // Each pass: every 31 passes both copters sink a pixel
 void copters_gravity(void);

@@ -9,7 +9,7 @@
 
 static const char fade[7] = {11, 12, 15, 1, 15, 12, 11};
 
-void presents(void)
+void mr_soft_presents(void)
 {
 	for (char i = 0; i <= 3; i++)
 	{

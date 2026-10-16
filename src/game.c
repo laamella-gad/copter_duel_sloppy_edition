@@ -101,8 +101,10 @@ static void play_round(void)
 	}
 
 	cia2.cra = 0;
+	copters_stop();
 	sound_drone_off();
 	sound_round_end();
+	explosion_reset();
 }
 
 // Who won: a player who knocked the other out, else the one with more points
@@ -140,7 +142,7 @@ void game(void)
 	vic.spr_enable = 0;
 	clear_screen();
 	vic.color_border = ORANGE;
-	vic.color_back = LIGHT_BLUE;
+	vic.color_back = PLAYFIELD_BACK;
 	vic.color_back1 = 11;
 	vic.color_back2 = 8;
 	vic.ctrl2 = 216;
