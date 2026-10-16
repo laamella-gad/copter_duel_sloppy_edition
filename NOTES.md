@@ -12,7 +12,7 @@ in the git history up to commit 86dd7cd.
 |---|---|
 | `src/main.c` | Start: memory layout, graphics, VIC setup, then title and game in turn |
 | `src/system.c` | Screen addresses, colours, joystick bits; text output, jiffy waits, key or button |
-| `src/sound.c` | The SID: the copters' drone (voice 0), the explosion noise (voice 1), the rocket whoosh (voice 2) |
+| `src/sound.c` | The SID: the copters' drone (voice 0), the explosion noise (voice 1), the rocket whoosh and the wall buzz (voice 2) |
 | `src/title.c` | "mr-soft presents" and the title screen |
 | `src/music.c` | The title music: the SID tune and its 50 Hz raster IRQ |
 | `src/game.c` | One game: playfield and sprites set up, the round loop, the winner |
@@ -77,6 +77,8 @@ end of the set and colour the copy.
   gate off and on to start it over, the end of the explosion turns it off.
 - Firing a rocket starts a whoosh on voice 2 (new, the original was silent): noise falling from $3000 to $0800 in
   $0200 steps per pass, decay 300 ms.
+- A copter touching the background buzzes (new): a 70 Hz square wave on voice 2, sustain 10, from the pass after
+  the first touch until the pass after the last. The whoosh has voice 2 while it falls; the buzz comes back after it.
 - A crash stops the copter and explodes it at its place (the copter stays visible), and the other player gets 100
   points; 19 explosion frames (171 passes) later a copter is lost. The original turned the copter sprite itself into the explosion.
 - A rocket hitting the background explodes, unless its bonus cell holds a bonus; the player can fire again right

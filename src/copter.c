@@ -2,6 +2,7 @@
 #include "rocket.h"
 #include "explosion.h"
 #include "panel.h"
+#include "sound.h"
 #include <c64/vic.h>
 
 // Sprite blocks $10-$1f: 8 headings, each in two rotor frames (bit 3).
@@ -224,7 +225,10 @@ void copter_crash(struct Player * p)
 void copter_wall(struct Player * p, bool touching)
 {
 	if (touching && !p->crashed)
+	{
+		sound_scrape();
 		use_energy(p);
+	}
 }
 
 void copters_collide(char sprite_collisions)

@@ -1,5 +1,5 @@
 // The SID: the copters' drone on voice 0, explosions on voice 1, rockets
-// being fired on voice 2
+// being fired and copters touching the background on voice 2
 #ifndef SOUND_H
 #define SOUND_H
 
@@ -16,10 +16,13 @@ void sound_explosion_end(void);
 // Starts the rocket's whoosh over: noise falling in pitch as it fades
 void sound_rocket(void);
 
-// Each pass of a round: the whoosh falls in pitch
+// A copter touches the background this pass: a low buzz while it lasts
+void sound_scrape(void);
+
+// Each pass of a round: the whoosh falls in pitch, the buzz starts or stops
 void sound_update(void);
 
-// Silences the explosion and the whoosh
+// Silences the explosion, the whoosh and the buzz
 void sound_round_end(void);
 
 #pragma compile("sound.c")

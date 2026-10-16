@@ -9,7 +9,12 @@
 #define WHOOSH_STEP     0x0200
 #define WHOOSH_END      0x0800
 
+// A copter touching the background: a low square wave, 70 Hz
+#define SCRAPE_FREQ     SID_FREQ_PAL(70)
+#define SCRAPE_WIDTH    0x0800
+
 static unsigned whoosh;
+static bool scraping, scrape_on;
 
 void sound_setup(void)
 {
@@ -55,6 +60,7 @@ void sound_explosion_end(void)
 void sound_rocket(void)
 {
 	whoosh = WHOOSH_START;
+	scrape_on = false;
 	sid.voices[2].ctrl = SID_CTRL_NOISE;
 	sid.voices[2].attdec = SID_ATK_2 | SID_DKY_300;
 	sid.voices[2].susrel = 0;
@@ -62,6 +68,13 @@ void sound_rocket(void)
 	sid.voices[2].ctrl = SID_CTRL_NOISE | SID_CTRL_GATE;
 }
 
+void sound_scrape(void)
+{
+	scraping = true;
+}
+
+// Voice 2 plays the whoosh while it falls, else the scrape while a copter
+// touched the background in the last pass
 void sound_update(void)
 {
 	if (whoosh > WHOOSH_END)
@@ -69,6 +82,22 @@ void sound_update(void)
 		whoosh -= WHOOSH_STEP;
 		sid.voices[2].freq = whoosh;
 	}
+	else if (scraping && !scrape_on)
+	{
+		sid.voices[2].ctrl = SID_CTRL_RECT;
+		sid.voices[2].attdec = SID_ATK_2 | SID_DKY_6;
+		sid.voices[2].susrel = 0xa0 | SID_DKY_24;
+		sid.voices[2].freq = SCRAPE_FREQ;
+		sid.voices[2].pwm = SCRAPE_WIDTH;
+		sid.voices[2].ctrl = SID_CTRL_RECT | SID_CTRL_GATE;
+		scrape_on = true;
+	}
+	else if (!scraping && scrape_on)
+	{
+		sid.voices[2].ctrl = SID_CTRL_RECT;
+		scrape_on = false;
+	}
+	scraping = false;
 }
 
 void sound_round_end(void)
@@ -76,4 +105,5 @@ void sound_round_end(void)
 	sid.voices[1].ctrl = SID_CTRL_NOISE;
 	sid.voices[2].ctrl = SID_CTRL_NOISE;
 	whoosh = 0;
+	scraping = scrape_on = false;
 }
