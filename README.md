@@ -3,6 +3,8 @@
 A two-player helicopter duel for the Commodore 64: yellow (joystick in port 2) and red (port 1) fight it out with
 rockets in a cave.
 
+[Download copterduel.prg](copterduel.prg)
+
 ## The original
 
 "Copter Duel" was written in 1987 by Ronald Mayer and published as "mr-soft": a BASIC program with a
@@ -30,6 +32,6 @@ history up to commit 86dd7cd. `NOTES.md` has the details.
 Needs oscar64 and pucrunch; `make run` also needs VICE.
 
 ```sh
-make        # build/copterduel.prg
+make        # copterduel.prg
 make run    # build and start it in VICE
 ```

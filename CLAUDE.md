@@ -9,7 +9,7 @@ Copter Duel Sloppy Edition: the C64 game "Copter Duel" (1987, Ronald Mayer) rewr
 ## Commands
 
 ```sh
-# Build: the pucrunched build/copterduel.prg, from build/copterduel_raw.prg
+# Build: the pucrunched copterduel.prg (checked in), from build/copterduel_raw.prg
 # (+ .asm, .map, .lbl listings)
 make
 # Build and run it in VICE (X64=x64 etc. to pick another emulator)
