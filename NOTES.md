@@ -65,6 +65,9 @@ BASIC ROM).
 The original BASIC read the end flag from the wrong address (`peek(32941)` instead of 32950), so the winner was always
 decided by points, even after a knockout. The C version uses `game_over_flags`: a knockout shows "red/yellow copter wins!".
 
+After a game the title comes back without "mr-soft presents" first; the original showed it after every game. The
+original's "please wait..." screen, shown while it loaded the engine, is left out.
+
 Two quirks of the engine are fixed too:
 - Yellow's down move and gravity stopped only at y = $e8 exactly (red's down move at y >= $e8); both copters now
   stop at y >= $e8.

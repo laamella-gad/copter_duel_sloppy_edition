@@ -43,7 +43,6 @@ __export const char charset_data[] = {
 #define YELLOW      7
 #define GREEN       5
 #define LIGHT_BLUE  14
-#define LIGHT_GREY  15
 
 // The original printed through the KERNAL; like its screen editor, a clear
 // fills the colour RAM with the colour of the last text
@@ -118,6 +117,23 @@ static void sid_setup(void)
 
 static const char fade[7] = {11, 12, 15, 1, 15, 12, 11};
 
+// 1017-1048: "mr-soft presents" fading in and out (the original showed it
+// before every title, this version only at the start)
+static void mr_soft_presents(void)
+{
+	for (char i = 0; i <= 3; i++)
+	{
+		put(screen, 11, 11, fade[i], s"mr-soft  presents");
+		wait_jiffies(7);
+	}
+	wait_jiffies(124);
+	for (char i = 4; i <= 6; i++)
+	{
+		put(screen, 11, 11, fade[i], s"mr-soft  presents");
+		wait_jiffies(7);
+	}
+}
+
 // 1017-1048: the title, until a key or button is pressed
 static void title(void)
 {
@@ -135,19 +151,6 @@ static void title(void)
 	vic.spr_color[7] = 7;
 	sid_setup();
 
-	for (char i = 0; i <= 3; i++)
-	{
-		put(screen, 11, 11, fade[i], s"mr-soft  presents");
-		wait_jiffies(7);
-	}
-	wait_jiffies(124);
-	for (char i = 4; i <= 6; i++)
-	{
-		put(screen, 11, 11, fade[i], s"mr-soft  presents");
-		wait_jiffies(7);
-	}
-
-	clear_screen(screen);
 	for (char i = 0; i <= 5; i++)
 	{
 		vic.spr_pos[i].y = 80;
@@ -252,11 +255,8 @@ static void game(void)
 
 int main(void)
 {
-	// 1010: shown while the original loaded the engine
 	vic.color_back = 0;
 	vic.color_border = 0;
-	clear_screen((volatile char *)0x0400);
-	put((volatile char *)0x0400, 11, 13, LIGHT_GREY, s"please wait...");
 
 	// 1014-1016: no case switching, VIC bank 1 with the screen at $4000
 	// and the character set at $7800
@@ -271,6 +271,7 @@ int main(void)
 	vic.color_back1 = 7;
 	vic.color_back2 = 9;
 
+	mr_soft_presents();
 	for (;;)
 	{
 		title();
