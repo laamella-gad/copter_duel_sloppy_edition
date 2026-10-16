@@ -42,9 +42,11 @@ history up to commit 86dd7cd. `NOTES.md` has the details.
 - The copters have momentum instead of moving at a fixed speed.
 - Touching the cave walls drains energy instead of crashing the copter at once.
 - A rocket hit takes a third of the energy instead of crashing the copter, and the bonuses give more rockets and energy.
+- Bonuses are easier to shoot: a rocket that overlaps one picks it up, with a little to spare.
 - Rockets explode when they hit the cave walls.
 - Crashes are more dramatic: the copter spins and flashes while it explodes, the background flashes on every explosion.
-- New sounds: a whoosh when a rocket is fired and a buzz while a copter touches a wall.
+- New sounds: a whoosh when a rocket is fired, a bip when it picks up a bonus and a buzz while a copter touches
+  a wall.
 - The title screen plays music ("Gory Ghost") and its letters wave.
 - Fixed engine quirks: copters stopped at the ground inconsistently, and rockets near the screen edges read memory
   past the screen.

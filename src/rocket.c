@@ -37,24 +37,41 @@ void rocket_move(struct Player * p)
 		vic.spr_pos[s].x += 2;
 }
 
-// The screen cell the rocket picks bonuses up from: one row down and two
-// columns right of its top left corner; none off the screen
-static volatile char * rocket_cell(struct Player * p)
+// The rocket's pick-up rows: the 3 rows it is drawn in (sprite rows 8-10) and
+// 2 more on each side. Less than a character apart, so any cell overlapping
+// rows 6-12 holds one of them
+#define PICKUP_TOP      6
+#define PICKUP_BOTTOM   12
+
+// The screen cell at a sprite row of the rocket, two columns right of its
+// top left corner; none off the screen
+static volatile char * rocket_cell(struct Player * p, char sprite_row)
 {
 	char s = p->sprite + 2;
 	char column = (char)(vic.spr_pos[s].x - 0x1a) >> 3;
-	char row = (char)(vic.spr_pos[s].y - 0x30) >> 3;
-	if (row >= 24 || column >= 38)
+	char row = (char)(vic.spr_pos[s].y - 0x32 + sprite_row) >> 3;
+	if (row >= 25 || column >= 38)
 		return nullptr;
-	return screen + (unsigned)row * 40 + column + 0x2a;
+	return screen + (unsigned)row * 40 + column + 2;
+}
+
+// The bonus the rocket's pick-up rows overlap, if any
+static volatile char * rocket_bonus_cell(struct Player * p)
+{
+	volatile char * cell = rocket_cell(p, PICKUP_TOP);
+	if (cell && is_bonus(*cell))
+		return cell;
+	cell = rocket_cell(p, PICKUP_BOTTOM);
+	if (cell && is_bonus(*cell))
+		return cell;
+	return nullptr;
 }
 
 void rocket_wall(struct Player * p, bool touching)
 {
 	if (!p->rocket || !touching)
 		return;
-	volatile char * cell = rocket_cell(p);
-	if (cell && is_bonus(*cell))
+	if (rocket_bonus_cell(p))
 		return;
 
 	char s = p->sprite + 2;
@@ -88,10 +105,11 @@ void rocket_bonus(struct Player * p)
 	if (!p->rocket)
 		return;
 
-	volatile char * cell = rocket_cell(p);
+	volatile char * cell = rocket_bonus_cell(p);
 	if (!cell)
 		return;
 
+	sound_bonus();
 	switch (*cell)
 	{
 	case BONUS_POINTS:

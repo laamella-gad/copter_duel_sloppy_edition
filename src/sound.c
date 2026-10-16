@@ -13,6 +13,12 @@
 #define SCRAPE_FREQ     SID_FREQ_PAL(70)
 #define SCRAPE_WIDTH    0x0800
 
+// A bonus picked up: a high square wave bip, 2500 Hz for BIP_PASSES passes
+// (about 80 ms)
+#define BIP_FREQ        SID_FREQ_PAL(2500)
+#define BIP_WIDTH       0x0800
+#define BIP_PASSES      6
+
 // Voice 1's envelope: attack 0, decay 0, sustain 15, release 10
 #define EXPLOSION_AD    0x00
 #define EXPLOSION_SR    0xfa
@@ -22,7 +28,7 @@
 
 static unsigned whoosh;
 static bool scraping, scrape_on;
-static char explosion_restart;
+static char explosion_restart, bip;
 
 void sound_setup(void)
 {
@@ -82,13 +88,26 @@ void sound_rocket(void)
 	sid.voices[2].ctrl = SID_CTRL_NOISE | SID_CTRL_GATE;
 }
 
+void sound_bonus(void)
+{
+	whoosh = 0;
+	scrape_on = false;
+	bip = BIP_PASSES;
+	sid.voices[2].ctrl = SID_CTRL_RECT;
+	sid.voices[2].attdec = 0;
+	sid.voices[2].susrel = 0xf0;
+	sid.voices[2].freq = BIP_FREQ;
+	sid.voices[2].pwm = BIP_WIDTH;
+	sid.voices[2].ctrl = SID_CTRL_RECT | SID_CTRL_GATE;
+}
+
 void sound_scrape(void)
 {
 	scraping = true;
 }
 
-// Voice 2 plays the whoosh while it falls, else the scrape while a copter
-// touched the background in the last pass
+// Voice 2 plays the bip, else the whoosh while it falls, else the scrape
+// while a copter touched the background in the last pass
 void sound_update(void)
 {
 	if (explosion_restart && !--explosion_restart)
@@ -98,7 +117,12 @@ void sound_update(void)
 		sid.voices[1].ctrl = SID_CTRL_NOISE | SID_CTRL_GATE;
 	}
 
-	if (whoosh > WHOOSH_END)
+	if (bip)
+	{
+		if (!--bip)
+			sid.voices[2].ctrl = SID_CTRL_RECT;
+	}
+	else if (whoosh > WHOOSH_END)
 	{
 		whoosh -= WHOOSH_STEP;
 		sid.voices[2].freq = whoosh;
@@ -129,5 +153,6 @@ void sound_round_end(void)
 	explosion_restart = 0;
 	sid.voices[2].ctrl = SID_CTRL_NOISE;
 	whoosh = 0;
+	bip = 0;
 	scraping = scrape_on = false;
 }

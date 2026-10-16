@@ -12,7 +12,7 @@ in the git history up to commit 86dd7cd.
 |---|---|
 | `src/main.c` | Start: memory layout, graphics, VIC setup, then title and game in turn |
 | `src/system.c` | Screen addresses, colours, joystick bits; text output, jiffy waits, key or button |
-| `src/sound.c` | The SID: the copters' drone (voice 0), the explosion noise (voice 1), the rocket whoosh and the wall buzz (voice 2) |
+| `src/sound.c` | The SID: the copters' drone (voice 0), the explosion noise (voice 1), the rocket whoosh, the bonus bip and the wall buzz (voice 2) |
 | `src/title.c` | "mr-soft presents" and the title screen |
 | `src/music.c` | The title music: the SID tune and its 50 Hz raster IRQ |
 | `src/game.c` | One game: playfield and sprites set up, the round loop, the winner |
@@ -83,6 +83,8 @@ end of the set and colour the copy.
   $0200 steps per pass, decay 300 ms.
 - A copter touching the background buzzes (new): a 70 Hz square wave on voice 2, sustain 10, from the pass after
   the first touch until the pass after the last. The whoosh has voice 2 while it falls; the buzz comes back after it.
+- A rocket picking up a bonus bips (new): a 2500 Hz square wave on voice 2 for 6 passes (about 80 ms), cutting off
+  the whoosh. It has voice 2 over the whoosh and the buzz.
 - A crash stops the copter and explodes it at its place (the copter stays visible, spinning through its 16 sprite
   blocks and flashing through the colours one per frame while the explosion runs, then hidden), and the other player gets 100 points; 19 explosion frames (171 passes) later a copter is lost. The original turned the copter sprite itself into the explosion.
 - A rocket hitting the background explodes, unless its bonus cell holds a bonus; the player can fire again right
@@ -94,8 +96,11 @@ end of the set and colour the copy.
   a crash. In the original the hit crashed the copter and the rocket flew on.
 - Rockets pick up bonuses: $3a 10 points, $3b 14 rockets (half a bar), $3c 10 energy (just over a rocket hit). The
   original gave 3 rockets and 5 energy.
-- Copters stop sinking and moving down at y = $e8. A rocket picks up the bonus one row down and two columns right of
-  its top left corner.
+- Copters stop sinking and moving down at y = $e8.
+- A rocket picks up a bonus in the cell two columns right of its top left corner, at sprite row 6 or 12: the rocket is
+  drawn in rows 8-10, so the bonus counts while any part of the rocket overlaps it, with 2 pixels to spare on each
+  side (a 14 pixel window). The original only looked at the cell holding sprite row 10, the rocket's bottom row: an
+  8 pixel window, and a rocket overlapping a letter's bottom edge flew through it.
 
 ## Title wave
 
