@@ -24,7 +24,7 @@ annotations `copterduel.flo`, the BASIC listing, and the byte-patch build) is in
 |---|---|
 | $0801-$0900 | oscar64 startup |
 | $0a00-$4000 | Code, data, variables, stack |
-| $4000-$43ff | Screen (VIC bank 1: `$dd00` = 2, `$d018` = 15, KERNAL screen page `648` = 64) |
+| $4000-$43ff | Screen (VIC bank 1: `$dd00` = 2, `$d018` = 15) |
 | $43f8 | Sprite pointers: 0 yellow copter, 1 red copter, 2 yellow rocket, 3 red rocket |
 | $4049, $4251 | Player scores as 5 screen digits |
 | $4400-$4cc0 | Sprites: $10-$1f copter (two rotor frames x 8 headings), $20 rocket, $21-$2a explosion, $2b-$32 title |
@@ -53,11 +53,12 @@ annotations `copterduel.flo`, the BASIC listing, and the byte-patch build) is in
 
 ## Text output
 
-`copterduel.c` prints through the KERNAL (`$ffd2`) with the original PETSCII strings (`p"..."` literals plus control
-code macros), so the screen editor draws the same screens. The playfield is the exception: the original printed it, the C version
-copies `playfield.bin` to the screen and colour RAM and then joins the rows into 80 character logical lines in the
-screen line link table (`$d9`), as printing them did, because the end windows' `CR`s depend on it. Windows save what they cover into arrays (the original
-used the RAM under the BASIC ROM).
+The original printed everything through the KERNAL. `copterduel.c` writes to the screen directly instead: texts are
+screen code literals (`s"..."`) put at the row and column the original's cursor moves reached, the playfield is
+`playfield.bin` copied to the screen and colour RAM. Like the KERNAL's clear, `clear_screen` fills the colour RAM with
+the colour of the last text. `@` (the copyright sign in this character set) is screen code 0, so it can't be in a
+string and is written separately. Windows save what they cover into arrays (the original used the RAM under the
+BASIC ROM).
 
 ## Fixed bugs
 

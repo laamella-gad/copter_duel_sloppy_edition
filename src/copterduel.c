@@ -32,40 +32,43 @@ __export const char charset_data[] = {
 
 // KERNAL variables
 #define KEY_PRESSED     203     // 64: no key
-#define TEXT_COLOUR     646
-#define SCREEN_PAGE     648
+#define SHIFT_MODE      657     // 128: Shift + C= doesn't switch the character set
 #define JIFFY_LO        0xa2
 
 #define sid_reg ((volatile char *)0xd400)
 
-// PETSCII control codes
-#define CR      "\x0d"
-#define CLR     "\x93"
-#define HOME    "\x13"
-#define DOWN    "\x11"
-#define RGHT    "\x1d"
-#define WHT     "\x05"
-#define RED     "\x1c"
-#define GRN     "\x1e"
-#define LBLU    "\x9a"
-#define GRY3    "\x9b"
-#define YEL     "\x9e"
+// Colours
+#define WHITE       1
+#define RED         2
+#define YELLOW      7
+#define GREEN       5
+#define LIGHT_BLUE  14
+#define LIGHT_GREY  15
 
-#define DOWN4   DOWN DOWN DOWN DOWN
-#define RGHT4   RGHT RGHT RGHT RGHT
+// The original printed through the KERNAL; like its screen editor, a clear
+// fills the colour RAM with the colour of the last text
+static char text_colour = LIGHT_BLUE;
 
-static void chrout(char c)
+static void clear_screen(volatile char * at)
 {
-	__asm {
-		lda c
-		jsr $ffd2
+	for (unsigned i = 0; i < 1000; i++)
+	{
+		at[i] = ' ';
+		colour_ram[i] = text_colour;
 	}
 }
 
-static void print(const char * s)
+// Writes screen code text at a row and column
+static void put(volatile char * at, char row, char column, char colour, const char * s)
 {
+	unsigned o = row * 40 + column;
+	text_colour = colour;
 	while (*s)
-		chrout(*s++);
+	{
+		at[o] = *s++;
+		colour_ram[o] = colour;
+		o++;
+	}
 }
 
 // Waits the time of a BASIC FOR loop: forj=1to2000:next is 124 jiffies
@@ -87,21 +90,14 @@ static const char playfield[2000] = {
 	#embed "playfield.bin"
 };
 
-// KERNAL screen line link table: bit 7 set where a logical line starts
-#define LINE_LINKS  ((volatile char *)0xd9)
-
 static void draw_screen(void)
 {
 	vic.ctrl1 = 0;
-	print(CLR);
 	for (unsigned i = 0; i < 1000; i++)
 	{
 		screen[i] = playfield[i];
 		colour_ram[i] = playfield[1000 + i];
 	}
-	// Printed, the 40 character rows joined into 80 character logical lines
-	for (char i = 1; i < 24; i += 2)
-		LINE_LINKS[i] &= 0x7f;
 	vic.ctrl1 = 27;
 }
 
@@ -122,12 +118,10 @@ static void sid_setup(void)
 
 static const char fade[7] = {11, 12, 15, 1, 15, 12, 11};
 
-#define PRESENTS    HOME DOWN4 DOWN4 DOWN DOWN DOWN RGHT4 RGHT4 RGHT RGHT RGHT p"mr-soft  presents" CR
-
 // 1017-1048: the title, until a key or button is pressed
 static void title(void)
 {
-	print(CLR);
+	clear_screen(screen);
 	vic.spr_enable = 0;
 	vic.ctrl2 = 200;
 	vic.color_back = 0;
@@ -143,19 +137,17 @@ static void title(void)
 
 	for (char i = 0; i <= 3; i++)
 	{
-		POKE(TEXT_COLOUR, fade[i]);
-		print(PRESENTS);
+		put(screen, 11, 11, fade[i], s"mr-soft  presents");
 		wait_jiffies(7);
 	}
 	wait_jiffies(124);
 	for (char i = 4; i <= 6; i++)
 	{
-		POKE(TEXT_COLOUR, fade[i]);
-		print(PRESENTS);
+		put(screen, 11, 11, fade[i], s"mr-soft  presents");
 		wait_jiffies(7);
 	}
 
-	print(CLR);
+	clear_screen(screen);
 	for (char i = 0; i <= 5; i++)
 	{
 		vic.spr_pos[i].y = 80;
@@ -168,8 +160,11 @@ static void title(void)
 	vic.spr_pos[6].y = 110;
 	vic.spr_pos[7].y = 110;
 	vic.spr_enable = 255;
-	print(HOME DOWN4 DOWN4 DOWN4 DOWN RGHT4 RGHT4 RGHT LBLU p"@ 1987 by ronald mayer" CR);
-	print(DOWN4 RGHT4 GRN p"press any key or button to start" CR);
+	// The @ (the copyright sign in this character set) is screen code 0
+	put(screen, 13, 10, LIGHT_BLUE, s" 1987 by ronald mayer");
+	screen[13 * 40 + 9] = 0;
+	colour_ram[13 * 40 + 9] = LIGHT_BLUE;
+	put(screen, 18, 4, GREEN, s"press any key or button to start");
 
 	while (no_key_or_button())
 		;
@@ -192,7 +187,7 @@ static char compare_scores(void)
 static void game(void)
 {
 	vic.spr_enable = 0;
-	print(CLR);
+	clear_screen(screen);
 	vic.color_border = 8;
 	vic.color_back = 14;
 	vic.color_back1 = 11;
@@ -232,18 +227,18 @@ static void game(void)
 
 	window_open(screen + 242, 26, 10, 3);
 	window_open(screen + 283, 24, 8, 6);
-	print(HOME DOWN4 DOWN4 DOWN RGHT4 RGHT4 RGHT RGHT RGHT RED p"game over" CR);
+	put(screen, 9, 11, RED, s"game over");
 
 	if (x != 1 && x != 2)
 		x = compare_scores();
 	if (x == 2)
-		print(DOWN DOWN DOWN RGHT4 RGHT RGHT YEL p"yellow copter wins!" CR);
+		put(screen, 13, 6, YELLOW, s"yellow copter wins!");
 	else if (x == 1)
-		print(DOWN DOWN DOWN RGHT4 RGHT4 RED p"red copter wins!" CR);
+		put(screen, 13, 8, RED, s"red copter wins!");
 	else
 	{
-		print(DOWN DOWN RGHT4 RGHT RGHT RGHT WHT p"both players have" CR);
-		print(RGHT4 RGHT4 RGHT WHT p"equal points!" CR);
+		put(screen, 12, 7, WHITE, s"both players have");
+		put(screen, 14, 9, WHITE, s"equal points!");
 	}
 
 	vic.spr_enable = 0;
@@ -260,15 +255,15 @@ int main(void)
 	// 1010: shown while the original loaded the engine
 	vic.color_back = 0;
 	vic.color_border = 0;
-	print(CLR DOWN4 DOWN4 DOWN DOWN DOWN RGHT4 RGHT4 RGHT4 RGHT GRY3 p"please wait..." CR);
+	clear_screen((volatile char *)0x0400);
+	put((volatile char *)0x0400, 11, 13, LIGHT_GREY, s"please wait...");
 
 	// 1014-1016: no case switching, VIC bank 1 with the screen at $4000
 	// and the character set at $7800
-	chrout(8);
+	POKE(SHIFT_MODE, 128);
 	cia2.pra = 2;
 	vic.memptr = 15;
-	POKE(SCREEN_PAGE, 64);
-	chrout(147);
+	clear_screen(screen);
 	vic.spr_enable = 0;
 	vic.spr_msbx = 0;
 	vic.spr_expand_y = 0;
