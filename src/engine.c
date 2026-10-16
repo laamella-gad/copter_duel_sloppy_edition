@@ -154,7 +154,8 @@ static void score_add(volatile char * score, signed char x)
 	}
 }
 
-// Moves the explosion sprite to a sprite position and starts it over
+// Moves the explosion sprite to a sprite position and starts it over; the
+// gate goes off and on again so the sound starts over too
 static void explode(char x, char y)
 {
 	vic.spr_pos[EXPLOSION_SPRITE].x = x;
@@ -162,11 +163,12 @@ static void explode(char x, char y)
 	sprite_pointers[EXPLOSION_SPRITE] = EXPLOSION_FIRST;
 	vic.spr_enable |= 1 << EXPLOSION_SPRITE;
 	blast_delay = 8;
-	sid.voices[1].ctrl = SID_CTRL_NOISE | SID_CTRL_GATE;
 	sid.voices[1].ctrl = SID_CTRL_NOISE;
+	sid.voices[1].ctrl = SID_CTRL_NOISE | SID_CTRL_GATE;
 }
 
-// Every 9 passes the explosion's next frame; after the last it is gone
+// Every 9 passes the explosion's next frame; after the last it is gone and
+// its sound fades out
 static void explosion(void)
 {
 	if (!(vic.spr_enable & (1 << EXPLOSION_SPRITE)))
@@ -180,7 +182,10 @@ static void explosion(void)
 	if (sprite_pointers[EXPLOSION_SPRITE] < EXPLOSION_LAST)
 		sprite_pointers[EXPLOSION_SPRITE]++;
 	else
+	{
 		vic.spr_enable &= ~(1 << EXPLOSION_SPRITE);
+		sid.voices[1].ctrl = SID_CTRL_NOISE;
+	}
 }
 
 // Crashes the copter: it explodes and stops. Later calls step the crash;
@@ -600,4 +605,5 @@ void play_round(void)
 	}
 
 	cia2.cra = 0;
+	sid.voices[1].ctrl = SID_CTRL_NOISE;
 }

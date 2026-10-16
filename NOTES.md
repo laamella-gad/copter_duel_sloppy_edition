@@ -55,7 +55,8 @@ end of the set and colour the copy.
 - Yellow is the joystick in port 2 (`$dc00`), red the one in port 1 (`$dc01`). Each pass: `explosion`, `gravity`,
   `control`, `rocket_move`, `tick`, `collisions`, `rocket_bonus`, and every other pass `place_bonuses`.
 - Status bars are screen characters: energy and rockets go from $23 (full) to $27 (empty); copter icons are $5b, a lost one $3d.
-- Sprite 4 is the explosion (multicolour, colour 8, frames $21-$2a, 9 passes each, with the noise on voice 1). A
+- Sprite 4 is the explosion (multicolour, colour 8, frames $21-$2a, 9 passes each). Its sound is the noise on voice 1:
+  each explosion turns the gate off and on to start it over, the end of the explosion turns it off. A
   crashing copter or a rocket hitting the background moves it there and starts it over; there is one, so a new
   explosion cuts the running one short. It is only drawn: its collisions are ignored.
 - A hit stops the copter and explodes it at its place (the copter stays visible); 19 explosion steps (171 passes) later a copter is lost, and the other
