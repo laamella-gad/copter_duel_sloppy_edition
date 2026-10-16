@@ -14,7 +14,7 @@ build/copterduel_crunched.prg: build/copterduel.prg
 	$(PUCRUNCH) -c64 -x0x080d $< $@
 
 run: build/copterduel_crunched.prg
-	$(X64) $<
+	$(X64) -sound $<
 
 clean:
 	rm -rf build
