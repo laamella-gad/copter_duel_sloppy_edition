@@ -12,7 +12,7 @@ in the git history up to commit 86dd7cd.
 |---|---|
 | `src/main.c` | Start: memory layout, graphics, VIC setup, then title and game in turn |
 | `src/system.c` | Screen addresses, colours, joystick bits; text output, jiffy waits, key or button |
-| `src/sound.c` | The SID: the copters' drone (voice 0) and the explosion noise (voice 1) |
+| `src/sound.c` | The SID: the copters' drone (voice 0), the explosion noise (voice 1), the rocket whoosh (voice 2) |
 | `src/title.c` | "mr-soft presents" and the title screen |
 | `src/game.c` | One game: playfield and sprites set up, the round loop, the winner |
 | `src/playfield.c` | Drawing the playfield; placing the bonuses |
@@ -62,13 +62,15 @@ end of the set and colour the copy.
   is set and both crashes are over. Bit 0 = yellow has no copters left (red wins), bit 1 = red.
 - The rotor IRQ toggles the copters' rotor frame (bit 3 of the sprite pointer) every other IRQ, then chains to the KERNAL at $ea31.
 - Yellow is the joystick in port 2 (`$dc00`), red the one in port 1 (`$dc01`). Each pass: `explosion_update`,
-  `copters_gravity`, `copter_control`, `rocket_move`, `player_tick`, `collisions`, `rocket_bonus`, `bonuses_update`
+  `sound_update`, `copters_gravity`, `copter_control`, `rocket_move`, `player_tick`, `collisions`, `rocket_bonus`, `bonuses_update`
   (which acts every other pass). Within a step yellow goes first.
 - Copter sprite blocks $10-$1f are 8 headings in two rotor frames (bit 3). With bit 3 set: $18 flying left, $19
   level left, $1a-$1d turning through the front (no firing), $1e level right, $1f flying right.
 - Status bars are screen characters: energy and rockets go from $23 (full) to $27 (empty); copter icons are $5b, a lost one $3d.
 - Sprite 4 is the explosion (multicolour, colour 8, frames $21-$2a, 9 passes each). Its sound is the noise on voice 1:
-  each explosion turns the gate off and on to start it over, the end of the explosion turns it off. A
+  each explosion turns the gate off and on to start it over, the end of the explosion turns it off.
+- Firing a rocket starts a whoosh on voice 2 (new, the original was silent): noise falling from $3000 to $0800 in
+  $0200 steps per pass, decay 300 ms. A
   crashing copter or a rocket hitting the background moves it there and starts it over; there is one, so a new
   explosion cuts the running one short. It is only drawn: its collisions are ignored.
 - A crash stops the copter and explodes it at its place (the copter stays visible), and the other player gets 100

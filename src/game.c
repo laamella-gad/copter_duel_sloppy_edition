@@ -86,6 +86,7 @@ static void play_round(void)
 			;
 
 		explosion_update();
+		sound_update();
 		copters_gravity();
 		copter_control(&yellow);
 		copter_control(&red);
@@ -101,7 +102,7 @@ static void play_round(void)
 
 	cia2.cra = 0;
 	sound_drone_off();
-	sound_explosion_end();
+	sound_round_end();
 }
 
 // Who won: a player who knocked the other out, else the one with more points

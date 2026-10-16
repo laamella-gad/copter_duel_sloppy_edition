@@ -2,6 +2,7 @@
 #include "explosion.h"
 #include "panel.h"
 #include "playfield.h"
+#include "sound.h"
 #include <c64/vic.h>
 
 // Energy units a hit takes: a third of a full bar
@@ -17,6 +18,7 @@ void rocket_fire(struct Player * p, char direction)
 	vic.spr_pos[s + 2].y = vic.spr_pos[s].y;
 	vic.spr_enable |= 4 << s;
 	p->rocket = direction;
+	sound_rocket();
 }
 
 static void rocket_end(struct Player * p)
